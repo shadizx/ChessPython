@@ -1,4 +1,9 @@
 import pygame
+import os
+
+#import piece images
+wPawn = pygame.image.load(os.path.join('assets', 'wP.svg'))
+
 
 # general piece class for all pieces
 class piece:
