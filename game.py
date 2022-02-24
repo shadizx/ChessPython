@@ -1,4 +1,5 @@
 import pygame
+import piece
 import board
 import os
 
@@ -21,6 +22,8 @@ def main():
     run = True
     mainboard = board.Board()
     mainboard.drawboard()
+    rookp = piece.rook("b")
+    WIN.blit(rookp.img, (320, 320))
     pygame.display.update()
     while run:
         clock.tick(fps)
@@ -29,4 +32,5 @@ def main():
                 run = False
     pygame.quit()
 
-main()
+if __name__ == "__main__":
+    main()
