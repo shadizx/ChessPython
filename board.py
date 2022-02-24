@@ -11,8 +11,8 @@ DIMENSION = WIDTH/8
 
 class Square:
     # default constructor
-    WHITE=(255,255,255)
-    BLACK=(0,0,0)
+    WHITE=(248,220,180)
+    BLACK=(184,140,100)
     
     def __init__(self, file, rank, color): 
         self.file = file
