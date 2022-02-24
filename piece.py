@@ -2,19 +2,19 @@ import pygame
 import os
 
 #import piece images
-wPawn = pygame.image.load(os.path.join('assets', 'wP.svg'))
-
+# wPawn = pygame.image.load(os.path.join('assets/pieces', 'wP.png'))
 
 # general piece class for all pieces
-class piece:
+class Piece:
     # default constructor
-    def __init__(self, row, col, color, type, val): 
-        self.row = row
-        self.col = col
+    def __init__(self, color, type, hasmoved): 
         self.color = color
-        self.type = ""        # type of piece (string, ex: bishop, etc..)
-        self.val = 0          # value of the piece
         self.selected = False # if piece is selected
+        self.hasmoved = False
+
+    def loadself(self):
+        piece = pygame.transform.scale(pygame.image.load("assets/pieces" + self.color + self.type + ".png"))
+
     
     # moving a piece
     def move(self):
@@ -29,22 +29,30 @@ class piece:
         pass
 # class piece
 
+
 # creating specific pieces that inherit from piece class
-
-class pawn(piece):
+class pawn(Piece):
     pass
 
-class bishop(piece):
+class bishop(Piece):
     pass
 
-class knight(piece):
+class knight(Piece):
     pass
 
-class rook(piece):
+class rook(Piece):
+    def __init__(self, color, type, hasmoved):
+        super().__init__(color, type, hasmoved)
+        self.type = "r"
+        self.hasmoved = hasmoved
+
+    def load(self):
+        pass
+
+
+
+class queen(Piece):
     pass
 
-class queen(piece):
-    pass
-
-class king(piece):
+class king(Piece):
     pass
