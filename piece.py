@@ -7,7 +7,7 @@ import os
 # general piece class for all pieces
 class Piece:
     # default constructor
-    def __init__(self, color, type): 
+    def __init__(self, color, type, row = 0, col = 0): 
         self.color = color
         self.selected = False # if piece is selected
         self.hasmoved = False
@@ -64,14 +64,19 @@ class FEN:
         self.fen =""
         #lowercase = black, upper = white
         self.startfen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        piecedict = {'p': pawn("b"),   'n': knight("b"),
+        self.piecelist = {'p': pawn("b"),   'n': knight("b"),
                     'b': bishop("b"), 'r': rook("b"),
                     'q': queen("b"),  'k': king("b"),
                     'P': pawn("w"),   'N': knight("w"),
                     'B': bishop("w"), 'R': rook("w"),
                     'Q': queen("w"),  'K': king("w")}
-    
+
+        
+        
     def LoadFromFEN(self):
+        piecedict = {}
+        squarelist = []
+        letterlist = ["a","b","c","d","e","f","g","h"]
         splitfen = self.fen.split(' ')
         file = 0
         row = 7
@@ -80,4 +85,7 @@ class FEN:
                 row -= 1
             elif s in range(9):
                 file += 1
+            else:
+                temppiece = self.piecelist[s]
+
                 

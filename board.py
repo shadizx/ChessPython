@@ -46,6 +46,19 @@ class Board:
                 temp = Square(indexf, indexr, isWhite)
                 self.squaredict[(l, n)] = temp
                 self.squarelist.append(temp)
+
+    def LoadFromFEN(self):
+        splitfen = self.fen.split(' ')
+        file = 0
+        row = 7
+        for s in splitfen[0]: #loop through the first string
+            if s == "/":
+                row -= 1
+            elif s in range(9):
+                file += 1
+            else
+
+
                 
     # def load_position_from_fen(self):  # loads piece positions from the FEN
     #     FEN_SPLIT = self.FEN.split(' ')
