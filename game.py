@@ -21,6 +21,7 @@ def main():
     clock = pygame.time.Clock()
     run = True
     mainboard = board.Board()
+    mainboard.LoadFromFEN()
     mainboard.drawboard()
     rookp = piece.rook("b")
     WIN.blit(rookp.img, (320, 320))
