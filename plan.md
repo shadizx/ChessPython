@@ -9,3 +9,8 @@
 # TODO and updates: (add updates here after each session)
 - moved loadfromfen to piece.py
 - need to finish loadfromfen
+
+2022/02/24
+- [ ] Access squares in load_from_fen
+- [ ] Assign each square a piece (its occupant) + each piece its square
+- [ ] Render pieces on the board

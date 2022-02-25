@@ -5,6 +5,9 @@ import os
 # wPawn = pygame.image.load(os.path.join('assets/pieces', 'wP.png'))
 
 # general piece class for all pieces
+
+
+PIECELIST = []
 class Piece:
     # default constructor
     def __init__(self, color, type, row = 0, col = 0): 
@@ -13,6 +16,7 @@ class Piece:
         self.hasmoved = False
         self.type = ""
         self.img = pygame.image.load("assets/pieces/" + color + type + ".svg")
+        PIECELIST.append(self)
     
     # moving a piece
     def move(self):
@@ -30,8 +34,10 @@ class Piece:
 
 # creating specific pieces that inherit from piece class
 class pawn(Piece):
-    def __init__(self, color, type = "p"):
-        super().__init__(color, type = "p")
+
+    def __init__(self, color, type = "p", row = 0, col = 0):
+        super().__init__(color, row, col, type = "p",)
+        
         self.type = "p"
 
 class bishop(Piece):
@@ -83,9 +89,10 @@ class FEN:
         for s in splitfen[0]: #loop through the first string
             if s == "/":
                 row -= 1
+                file = 0
             elif s in range(9):
                 file += 1
             else:
                 temppiece = self.piecelist[s]
 
-                
+            

@@ -9,3 +9,4 @@ Play chess against yourself!
 - [ ] Have bot play alongside a specific user style
 - [ ] Deploy app to website
 - [ ] Deploy program to app
+

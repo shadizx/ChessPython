@@ -15,12 +15,14 @@ class Square:
     # default constructor
     WHITE=(248,220,180)
     BLACK=(184,140,100)
-    
+    Occupant: piece.Piece
+
     def __init__(self, file, rank, color): 
         self.file = file
         self.rank = rank
         self.isWhite = color
         self.color = self.WHITE if self.isWhite else self.BLACK
+        self.Occupant = None
 
     #occupant:piece.Piece = None
 
@@ -28,6 +30,8 @@ class Square:
         pygame.draw.rect(WIN, self.color, pygame.Rect((DIMENSION*(self.rank)), (HEIGHT-DIMENSION*(self.file+1)), DIMENSION, DIMENSION))
         # if self.occupant is not None:
         #     pygame.blit()  # TODO finish this with occupant class's png and position of the piece on board + a certain number of squares
+
+    
 
 StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 # PIECES_DICT = {'p': piece.pawn(),   'n': piece.knight(),
@@ -57,7 +61,8 @@ class Board:
             elif s in range(9):
                 file += 1
             else
-
+    
+    
 
                 
     # def load_position_from_fen(self):  # loads piece positions from the FEN
@@ -76,7 +81,9 @@ class Board:
 
     def drawboard(self):
         for square in self.squarelist:
-            square.draw()        
+            square.draw()
+            piece.PIECELIST.render()
+        
 
 
 
