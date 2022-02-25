@@ -10,7 +10,8 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 
 DIMENSION = WIDTH//8
-PIECE_SIZE = int(DIMENSION * 0.9)
+PIECE_SIZE = int(DIMENSION * 0.9)  # adjust the size of pieces on the board
+# BLACK_ROOK_SIZE = int(PIECE_SIZE * 15)  # adjustment for the weird bug concerning the black rook
 
 class Piece:
     # default constructor
@@ -21,6 +22,8 @@ class Piece:
         self.type = type
         self.img = pygame.image.load("assets/pieces/" + color + type + ".svg")
         self.img = pygame.transform.scale(self.img, (PIECE_SIZE, PIECE_SIZE))
+        # if ((self.color == 'b') and (self.type == 'r')):
+        #     self.img = pygame.transform.scale(self.img, (BLACK_ROOK_SIZE, BLACK_ROOK_SIZE))
 
     def setpos(self, file, rank):  # easy navigation
         self.file = file
@@ -36,9 +39,8 @@ class Piece:
 
     # printing a piece on the board, centralized on their respective squares:
     def draw(self):
-        for offset in range(DIMENSION):
-            if (DIMENSION-PIECE_SIZE) == (offset*2):
-                WIN.blit(self.img, ((DIMENSION * self.file + offset), (HEIGHT - DIMENSION * (self.rank + 1) + offset)))
+        offset = (DIMENSION-PIECE_SIZE)//2
+        WIN.blit(self.img, ((DIMENSION * self.file + offset), (HEIGHT - DIMENSION * (self.rank + 1) + offset)))
 
 # class piece
 
@@ -177,22 +179,22 @@ def drawboard():
 
 
 
-# def main():
-#     # running main window
-#     clock = pygame.time.Clock()
-#     run = True
-#     mainboard = Board()
-#     mainboard.LoadFromFEN()
-#     mainboard.drawboard()
-#     # img = pygame.image.load("assets/pieces/wk.svg")
-#     # WIN.blit(img, (200, 300))
-#     pygame.display.update()
-#     while run:
-#         clock.tick(fps)
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 run = False
-#     pygame.quit()
+def main():
+    # running main window
+    clock = pygame.time.Clock()
+    run = True
+    mainboard = Board()
+    mainboard.LoadFromFEN()
+    mainboard.drawboard()
+    # img = pygame.image.load("assets/pieces/wk.svg")
+    # WIN.blit(img, (200, 300))
+    pygame.display.update()
+    while run:
+        clock.tick(fps)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+    pygame.quit()
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
