@@ -23,3 +23,12 @@ Notes: 2022/02/24 (midnight!)
 
 # TODO:
 - [ ] Design moves for each piece...
+
+2022/02/25 - Shadi, 2 hour session
+- fixed all image issues, board is in crisp quality
+- at what cost you may ask? had to photoshop external images to a fixed size
+- pygame.scale was causing the issues
+
+# next steps:
+- [ ] clean up the code along with the variables
+- [ ] drag and drop a piece

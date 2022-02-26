@@ -4,14 +4,12 @@ import os
 import piece
 
 # constants
-WIDTH = HEIGHT = 512                         # constant width and height, set for basic testing   
-WIN = pygame.display.set_mode((WIDTH, HEIGHT)) # setting window width and height
+width = height = 640                         # constant width and height, set for basic testing   
+win = pygame.display.set_mode((width, height)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
-
-DIMENSION = WIDTH//8
-PIECE_SIZE = int(DIMENSION * 0.9)  # adjust the size of pieces on the board
-# BLACK_ROOK_SIZE = int(PIECE_SIZE * 15)  # adjustment for the weird bug concerning the black rook
+dimension = width//8
+piece_size = int(dimension * 0.9)  # adjust the size of pieces on the board
 
 class Piece:
     # default constructor
@@ -21,8 +19,6 @@ class Piece:
         self.hasmoved = False
         self.type = type
         self.img = pygame.image.load("assets/" + color + type + ".png")
-        # if ((self.color == 'b') and (self.type == 'r')):
-        #     self.img = pygame.transform.scale(self.img, (BLACK_ROOK_SIZE, BLACK_ROOK_SIZE))
 
     def setpos(self, file, rank):  # easy navigation
         self.file = file
@@ -38,11 +34,8 @@ class Piece:
 
     # printing a piece on the board, centralized on their respective squares:
     def draw(self):
-        offset = (DIMENSION-PIECE_SIZE)//2
-        WIN.blit(self.img, ((DIMENSION * self.file + offset - 1), (HEIGHT - DIMENSION * (self.rank + 1) + offset)))
-
-# class piece
-
+        offset = (dimension-piece_size)//2
+        win.blit(self.img, ((dimension * self.file + offset - 3), (height - dimension * (self.rank + 1) + offset - 3)))
 
 # creating specific pieces that inherit from piece class
 class pawn(Piece):
@@ -98,7 +91,7 @@ class Square:
     #occupant:piece.Piece = None
 
     def draw(self):
-        pygame.draw.rect(WIN, self.color, pygame.Rect((DIMENSION*(self.file)), (HEIGHT-DIMENSION*(self.rank+1)), DIMENSION, DIMENSION))
+        pygame.draw.rect(win, self.color, pygame.Rect((dimension*(self.file)), (height-dimension*(self.rank+1)), dimension, dimension))
         # if self.occupant is not None:
         #     pygame.blit()  # TODO finish this with occupant class's png and position of the piece on board + a certain number of squares
 
@@ -186,7 +179,7 @@ def main():
     mainboard.LoadFromFEN()
     mainboard.drawboard()
     # img = pygame.image.load("assets/pieces/wk.svg")
-    # WIN.blit(img, (200, 300))
+    # win.blit(img, (200, 300))
     pygame.display.update()
     while run:
         clock.tick(fps)
