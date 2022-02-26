@@ -4,7 +4,7 @@ import os
 import piece
 
 # constants
-WIDTH, HEIGHT = 640, 640                   # constant width and height, set for basic testing   
+WIDTH = HEIGHT = 512                         # constant width and height, set for basic testing   
 WIN = pygame.display.set_mode((WIDTH, HEIGHT)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
@@ -20,8 +20,7 @@ class Piece:
         self.selected = False  # if piece is selected
         self.hasmoved = False
         self.type = type
-        self.img = pygame.image.load("assets/pieces/" + color + type + ".svg")
-        self.img = pygame.transform.scale(self.img, (PIECE_SIZE, PIECE_SIZE))
+        self.img = pygame.image.load("assets/" + color + type + ".png")
         # if ((self.color == 'b') and (self.type == 'r')):
         #     self.img = pygame.transform.scale(self.img, (BLACK_ROOK_SIZE, BLACK_ROOK_SIZE))
 
@@ -40,7 +39,7 @@ class Piece:
     # printing a piece on the board, centralized on their respective squares:
     def draw(self):
         offset = (DIMENSION-PIECE_SIZE)//2
-        WIN.blit(self.img, ((DIMENSION * self.file + offset), (HEIGHT - DIMENSION * (self.rank + 1) + offset)))
+        WIN.blit(self.img, ((DIMENSION * self.file + offset - 1), (HEIGHT - DIMENSION * (self.rank + 1) + offset)))
 
 # class piece
 
