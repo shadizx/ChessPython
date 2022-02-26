@@ -1,98 +1,88 @@
+# piece.py
+# responsible for functionality of the pieces
+
 import pygame
 import os
 
-#import piece images
-# wPawn = pygame.image.load(os.path.join('assets/pieces', 'wP.png'))
+###################### constants ############################
+width = height = 640                           # constant width and height, set for basic testing
+win = pygame.display.set_mode((width, height)) # setting window width and height
+pygame.display.set_caption("SelfChessAI")      # setting name of window
+fps = 60                                       # setting fps of game
+dimension = width//8                           # dimension of each square
+piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
+###################### constants ###########################             
 
-# general piece class for all pieces
+# Class piece -------------------------------------------
+# general parent class for each piece, is inherited from for efficient code
+class Piece:
+    # default constructor
+    def __init__(self, color, type, file=0, rank=0):
+        self.color = color
+        self.selected = False  # if piece is selected
+        self.hasmoved = False
+        self.type = type
+        self.img = pygame.image.load("assets/" + color + type + ".png")
 
+    def setpos(self, file, rank):  # easy navigation
+        self.file = file
+        self.rank = rank
 
-# PIECELIST = []
-# class Piece:
-#     # default constructor
-#     def __init__(self, color, type, row = 0, col = 0): 
-#         self.color = color
-#         self.selected = False # if piece is selected
-#         self.hasmoved = False
-#         self.type = ""
-#         self.img = pygame.image.load("assets/pieces/" + color + type + ".svg")
-#         PIECELIST.append(self)
-    
-#     # moving a piece
-#     def move(self):
-#         pass
+    # moving a piece
+    def move(self):
+        pass
 
-#     # checking if a piece is selected
-#     def isSelected(self):
-#         return self.selected
-    
-#     # printing a piece on the board
-#     def draw(self):
-#         pass
-# # class piece
+    # checking if a piece is selected
+    def isSelected(self):
+        return self.selected
 
+    # printing a piece on the board, centralized on their respective squares:
+    def draw(self):
+        offset = (dimension-piece_size)//2
+        win.blit(self.img, ((dimension * self.file + offset - 3), (height - dimension * (self.rank + 1) + offset - 3)))
+# Class piece ---------------------------------------------
 
-# # creating specific pieces that inherit from piece class
-# class pawn(Piece):
+# creating specific pieces that inherit from piece class
+# class pawn(piece) ---------------------------------------
+class pawn(Piece):
 
-#     def __init__(self, color, type = "p", row = 0, col = 0):
-#         super().__init__(color, row, col, type = "p",)
-        
-#         self.type = "p"
+    def __init__(self, color, file=0, rank=0):
+        super().__init__(color, type="p", file=file, rank=rank)  # have to keep it like this for the defaults to work!
 
-# class bishop(Piece):
-#     def __init__(self, color, type = "b"):
-#         super().__init__(color, type = "b")
-#         self.type = "b"
+        self.type = "p"
+# class pawn(piece) ----------------------------------------
 
-# class knight(Piece):
-#     def __init__(self, color, type = "n"):
-#         super().__init__(color, type = "n")
-#         self.type = "n"
+# class bishop(piece) --------------------------------------
+class bishop(Piece):
+    def __init__(self, color, file=0, rank=0):
+        super().__init__(color, type="b", file=file, rank=rank)
+        self.type = "b"
+# class bishop(piece) --------------------------------------
 
-# class rook(Piece):
-#     def __init__(self, color, type = "r"):
-#         super().__init__(color, type = "r")
-#         self.type = "r"
+# class knight(piece) --------------------------------------
+class knight(Piece):
+    def __init__(self, color, file=0, rank=0):
+        super().__init__(color, type="n", file=file, rank=rank)
+        self.type = "n"
+# class knight(piece) --------------------------------------
 
-# class queen(Piece):
-#     def __init__(self, color, type = "q"):
-#         super().__init__(color, type = "q")
-#         self.type = "q"
+# class rook(piece) ----------------------------------------
+class rook(Piece):
+    def __init__(self, color, file=0, rank=0):
+        super().__init__(color, type="r", file=file, rank=rank)
+        self.type = "r"
+# class rook(piece) -----------------------------------------
 
-# class king(Piece):
-#     def __init__(self, color, type = "k"):
-#         super().__init__(color, type = "k")
-#         self.type = "k"
+# class queen(piece) ----------------------------------------
+class queen(Piece):
+    def __init__(self, color, file=0, rank=0):
+        super().__init__(color, type="q", file=file, rank=rank)
+        self.type = "q"
+# class queen(piece) -----------------------------------------
 
-# class FEN:
-#     def __init__(self):
-#         self.fen =""
-#         #lowercase = black, upper = white
-#         self.startfen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#         self.piecelist = {'p': pawn("b"),   'n': knight("b"),
-#                     'b': bishop("b"), 'r': rook("b"),
-#                     'q': queen("b"),  'k': king("b"),
-#                     'P': pawn("w"),   'N': knight("w"),
-#                     'B': bishop("w"), 'R': rook("w"),
-#                     'Q': queen("w"),  'K': king("w")}
-
-        
-        
-#     def LoadFromFEN(self):
-#         piecedict = {}
-#         squarelist = []
-#         letterlist = ["a","b","c","d","e","f","g","h"]
-#         splitfen = self.fen.split(' ')
-#         file = 0
-#         row = 7
-#         for s in splitfen[0]: #loop through the first string
-#             if s == "/":
-#                 row -= 1
-#                 file = 0
-#             elif s in range(9):
-#                 file += 1
-#             else:
-#                 temppiece = self.piecelist[s]
-
-            
+# class king(piece) ------------------------------------------
+class king(Piece):
+    def __init__(self, color, file=0, rank=0):
+        super().__init__(color, type="k", file=file, rank=rank)
+        self.type = "k"
+# class king(piece) -------------------------------------------

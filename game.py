@@ -1,31 +1,48 @@
+# game.py
+# responsible for running the main program
+
 import pygame
 import piece
 import board
 import os
+from copy import copy, deepcopy
 
-WIDTH, HEIGHT = 640, 640                   # constant width and height, set for basic testing   
-WIN = pygame.display.set_mode((WIDTH, HEIGHT)) # setting window width and height
+###################### constants ############################
+width = height = 640                           # constant width and height, set for basic testing
+win = pygame.display.set_mode((width, height)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
+dimension = width//8                           # dimension of each square
+piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
+###################### constants ############################
 
-# function needed for refreshing window
-def drawwindow():
-    # WIN.blit(board, (0,0))
-    pygame.display.update()
-    # pygame.draw.rect(WIN,BLUE,(200,150,100,50))
+##################################################################
+# drawboard()
+# useful for drawing the board
+def drawboard():
+    squareimgs = board.Board()
+    for square in squareimgs.SquareDict.values():
+        square.draw()
+###################################################################
+# drawpieces()
+# useful for drawing the pieces
+def drawpieces():
+    pieceimgs = board.Board()
+    for p in pieceimgs.Pieces:
+        p.draw()
+###################################################################
 
-
-
+# main driver
 def main():
     # running main window
     clock = pygame.time.Clock()
     run = True
     mainboard = board.Board()
     mainboard.LoadFromFEN()
-    mainboard.drawboard()
-    rookp = piece.rook("b")
-    WIN.blit(rookp.img, (320, 320))
+    drawboard()
+    drawpieces()
     pygame.display.update()
+
     while run:
         clock.tick(fps)
         for event in pygame.event.get():
