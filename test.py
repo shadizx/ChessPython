@@ -15,6 +15,7 @@ fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 BOARD = board.Board()
+piecedrag = False
 ###################### constants ############################
 # drawcircle
 def drawmoves(surface, color, center, radius):
@@ -95,19 +96,25 @@ def main():
             if event.type == pygame.QUIT: # if program is executed
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1: # if left-clicked on piece
+                if event.button == 1: # if left-clicked
+                    #get mouse pos
                     x = getmpos()[0]
                     y = getmpos()[1]
-                    print(piece.numtoletter(x,y))
-                    piececlicked()
+                    # check if there is a piece where the mouse has been clicked
+                    if (board.PIECESloc[piece.numtoletter(x, y)] != None):
+                        #print square that mouse is on
+                        print(piece.numtoletter(x,y))
+                        #print moves:
+                        piececlicked()
+
                     
             if pygame.mouse.get_pressed()[0]: # while holding the piece
                 try:
                     x = event.pos[0]
                     y = event.pos[1]
-                    filex = x // 80
-                    filey = y // 80
-                    # print("[" + str(filex) + ", " + str(filey) + "]")
+                    filex = x // dimension
+                    filey = y // dimension
+                    print("[" + str(filex) + ", " + str(filey) + "]")
                 except AttributeError:
                     pass
                     # mainboard = board.Board()
