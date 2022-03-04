@@ -25,11 +25,6 @@ PIECESloc = {'a1': None, 'b1': None, 'c1': None, 'd1': None, 'e1': None, 'f1': N
              'a8': None, 'b8': None, 'c8': None, 'd8': None, 'e8': None, 'f8': None, 'g8': None, 'h8': None}
 
 ###################################################################
-
-def numtoletter(x, y):
-    file = ["a","b","c","d","e","f","g","h"]
-    rank = ["1","2","3","4","5","6","7","8"]
-    return (file[x] + rank[y])
 # class fen
 # store default values used for board translation
 class fen():
