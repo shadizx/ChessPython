@@ -23,6 +23,8 @@ class Piece:
         self.hasmoved = False
         self.type = type
         self.img = pygame.image.load("assets/" + color + type + ".png")
+        self.rect = self.img.get_rect()
+        self.clicked = False
 
     def setpos(self, file, rank):  # easy navigation
         self.file = file
