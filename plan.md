@@ -30,5 +30,11 @@ Notes: 2022/02/24 (midnight!)
 - pygame.scale was causing the issues
 
 # next steps:
-- [ ] clean up the code along with the variables
+- [X] clean up the code along with the variables
+- [ ] drag and drop a piece
+
+2022/03/04 - Shadi, progress over 3 days with minimum work each day
+- implemented showing the legal moves of pawns (without moving)
+- plan is to do the same for all other pieces
+# next steps:
 - [ ] drag and drop a piece
