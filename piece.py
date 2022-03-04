@@ -72,24 +72,24 @@ class pawn(Piece):
         #   if there is no piece in way of the current piece
         #       then move the piece
         # grab the file of the piece
-        l = numtoletter(self.file, self.rank)[0]
+        # l = numtoletter(self.file, self.rank)[0]
         # if piece is black:
         if self.color == "b":
-            self.moves.append((l, self.rank - 1))
+            self.moves.append((filelist[self.file] , self.rank - 1))
             if self.rank == 6:
-                self.moves.append((l, self.rank - 2))
-            if self.CanTakeLeft:
-                self.moves.append((l-1, self.rank - 1))
-            if self.CanTakeRight:
-                self.moves.append((l+1, self.rank - 1))
+                self.moves.append((filelist[self.file], self.rank - 2))
+            # if self.CanTakeLeft:
+            #     self.moves.append((l-1, self.rank - 1))
+            # if self.CanTakeRight:
+            #     self.moves.append((l+1, self.rank - 1))
         else:
-            self.moves.append((l, self.rank + 1))
+            self.moves.append((filelist[self.file], self.rank + 1))
             if self.rank == 1:
-                self.moves.append((l, self.rank + 2))
-            if self.CanTakeLeft:
-                self.moves.append((l-1, self.rank + 1))
-            if self.CanTakeRight:
-                self.moves.append((l+1, self.rank + 1))
+                self.moves.append((filelist[self.file], self.rank + 2))
+            # if self.CanTakeLeft:
+            #     self.moves.append((l-1, self.rank + 1))
+            # if self.CanTakeRight:
+            #     self.moves.append((l+1, self.rank + 1))
 
         # print(f"my legal moves are {self.moves}")
 
