@@ -13,6 +13,7 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
+DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ###################### constants ############################
 
 PIECESloc = {'a1': None, 'b1': None, 'c1': None, 'd1': None, 'e1': None, 'f1': None, 'g1': None, 'h1': None,
@@ -38,7 +39,7 @@ class fen():
     FILELIST = ["a","b","c","d","e","f","g","h"]
     RANKLIST = [1,2,3,4,5,6,7,8]
     castling_dict = {'k': "black_kingside", 'K': "white_kingside", 'q': "black_queenside", 'Q': "white_queenside"}  # TODO: edit this!
-    StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    StartFEN = "rnbqkbnr/pppppppp/8/8/6p1/6P1/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     CastlingsAllowed = []  # resets castles so we can assign them again here
     turn_dict = {'w': 0, 'b': 1}  # TODO: edit this as required!
     STARTPIECES = []  # might want to set up the entire starting position pieces into this if you want to avoid initializing board from FEN

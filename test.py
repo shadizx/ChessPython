@@ -62,6 +62,7 @@ def piececlicked():
         # grab the piece that is on that square
         p = board.PIECESloc[piece.numtoletter(x, y)]
         # load the legal moves of that piece
+
         p.legalmoves()
 
         # loop through legal moves to show each legal move

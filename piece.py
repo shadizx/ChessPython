@@ -61,7 +61,8 @@ class Piece:
 # creating specific pieces that inherit from piece class
 # class pawn(piece) ---------------------------------------
 class pawn(Piece):
-
+    CanTakeLeft = False
+    CanTakeRight = False
     def __init__(self, color, file=0, rank=0):
         super().__init__(color, type="p", file=file, rank=rank)  # have to keep it like this for the defaults to work!
         self.type = "p"
@@ -75,10 +76,22 @@ class pawn(Piece):
         # if piece is black:
         if self.color == "b":
             self.moves.append((l, self.rank - 1))
-            self.moves.append((l, self.rank - 2))
+            if self.rank == 6:
+                self.moves.append((l, self.rank - 2))
+            if self.CanTakeLeft:
+                self.moves.append((l-1, self.rank - 1))
+            if self.CanTakeRight:
+                self.moves.append((l+1, self.rank - 1))
         else:
             self.moves.append((l, self.rank + 1))
-            self.moves.append((l, self.rank + 2)) 
+            if self.rank == 1:
+                self.moves.append((l, self.rank + 2))
+            if self.CanTakeLeft:
+                self.moves.append((l-1, self.rank + 1))
+            if self.CanTakeRight:
+                self.moves.append((l+1, self.rank + 1))
+
+        # print(f"my legal moves are {self.moves}")
 
 # class pawn(piece) ----------------------------------------
 

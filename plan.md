@@ -38,3 +38,7 @@ Notes: 2022/02/24 (midnight!)
 - plan is to do the same for all other pieces
 # next steps:
 - [ ] drag and drop a piece
+- [ ] Calculation to end of board in piece.py
+- [ ] knight moves, bishop moves, queen moves, king moves, rook moves
+
+- [ ] in game.py, implement taking, blocked pieces, en passant, castling, check, checkmate, stalemate
