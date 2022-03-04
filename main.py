@@ -1,6 +1,15 @@
 import pygame
 
 # --- constants --- (UPPER_CASE names)
+width = height = 640                           # constant width and height, set for basic testing
+win = pygame.display.set_mode((width, height)) # setting window width and height
+pygame.display.set_caption("SelfChessAI")      # setting name of window
+fps = 60                                       # setting fps of game
+dimension = width//8                           # dimension of each square
+piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
+piecedrag = False
+offset = (dimension-piece_size)//2
+
 
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 640
@@ -32,7 +41,8 @@ pygame.display.set_caption("Tracking System")
 
 # - objects -
 
-rectangle = pygame.rect.Rect(300,300,164,164)
+piece = pygame.image.load("assets/" + "w" + "p" + ".png")
+
 rectangle_draging = False
 
 def drawmoves(surface, color, center, radius):
@@ -50,6 +60,8 @@ circler = 20
 clock = pygame.time.Clock()
 
 running = True
+x = 0
+y = 0
 
 while running:
 
@@ -61,18 +73,15 @@ while running:
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:            
-                if rectangle.collidepoint(event.pos):
                     rectangle_draging = True
                     mouse_x, mouse_y = event.pos
-                    print(str(rectangle.x) + str(rectangle.y))
-                    print(str(event.pos[0]) + str(event.pos[1]))
 
-                    offset = 1/2 * 164
+                    # x = (dimension * 3 + offset - 3)
+                    # y = (height - dimension * (3 + 1) + offset - 3)
+                    x = mouse_x - 78/2
+                    y = mouse_y - 78/2
 
-                    rectangle.x = mouse_x - 82
-                    rectangle.y = mouse_y - 82
-
-                    drawmoves(screen, (0, 0, 0, 127), (rectangle.x, rectangle.y), circler)
+                    drawmoves(screen, (0, 0, 0, 127), (x, y), circler)
                     pygame.display.flip()
 
                     
@@ -84,8 +93,8 @@ while running:
         elif event.type == pygame.MOUSEMOTION:
             if rectangle_draging:
                 mouse_x, mouse_y = event.pos
-                rectangle.x = mouse_x - 82
-                rectangle.y = mouse_y - 82
+                x = mouse_x - 78/2
+                y = mouse_y - 78/2
 
     # - updates (without draws) -
 
@@ -95,7 +104,8 @@ while running:
 
     screen.fill(WHITE)
 
-    pygame.draw.rect(screen, RED, rectangle)
+    screen.blit(piece, ((dimension * 3 + offset - 3) + x , (height - dimension * (3 + 1) + offset - 3) + y))
+
 
     pygame.display.flip()
 
