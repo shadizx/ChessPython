@@ -1,6 +1,6 @@
 # piece.py
 # responsible for functionality of the pieces
-
+import piecedirectory as pd
 import pygame
 import os
 
@@ -23,7 +23,6 @@ def tupletranslate(m):
     x = fileranks[m[0]]
     y = int(ranklist[m[1] - 2])
     return((x,y))
-
 ############################################################   
 
 # Class piece -------------------------------------------
@@ -39,10 +38,14 @@ class Piece:
         self.rect = self.img.get_rect()
         self.clicked = False
         self.moves = []
-
-    def setpos(self, file, rank):  # easy navigation
         self.file = file
         self.rank = rank
+
+    def setpos(self, file, rank):  # easy navigation
+        pd.DIRECTORY[(filelist[self.file] + str(ranklist[self.rank]))] = None
+        self.file = file
+        self.rank = rank
+        pd.DIRECTORY[(filelist[file] + str(ranklist[rank]))] = self
 
     # moving a piece
     def move(self, x, y):
