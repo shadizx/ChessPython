@@ -42,15 +42,16 @@ class Piece:
         self.rank = rank
 
     def setpos(self, file, rank):  # easy navigation
-        pd.DIRECTORY[(filelist[self.file] + str(ranklist[self.rank]))] = None
         self.file = file
         self.rank = rank
         pd.DIRECTORY[(filelist[file] + str(ranklist[rank]))] = self
 
     # moving a piece
-    def move(self, x, y):
-        self.file = x
-        self.file = y
+    def move(self, file, rank):
+        pd.DIRECTORY[(filelist[self.file] + str(ranklist[self.rank]))] = None
+        self.file = file
+        self.rank = rank
+        pd.DIRECTORY[(filelist[file] + str(ranklist[rank]))] = self
 
     # checking if a piece is selected
     def isSelected(self):

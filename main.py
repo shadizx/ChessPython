@@ -141,7 +141,7 @@ def main():
                         for move in p.moves:
                             if ((x,y) == move):
                                 print("LEGAL MOVE")
-                                pd.DIRECTORY[piece.numtoletter(xpos, ypos)].setpos(x,y)
+                                pd.DIRECTORY[piece.numtoletter(xpos, ypos)].move(x,y)
                                 movesavail.clear()
                                 refresh()
                             else:
