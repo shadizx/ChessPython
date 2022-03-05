@@ -63,10 +63,8 @@ def printmoves(p):
     p.legalmoves()
     # loop through legal moves to show each legal move
     for move in p.moves:
-        # translate a tuple such as ('g', 2) to corresponding file and rank (7,1)
-        fr = piece.tupletranslate(move)
         #load the legal moves on the board
-        circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * fr[0] + circlex, height-dimension*(fr[1]+1) + circley), circler)
+        circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * move[0] + circlex, height-dimension*(move[1]) + circley), circler)
         movesavail.append(circleimg)
 ###################################################################
 # piece2mouse
@@ -83,6 +81,15 @@ def refresh():
     drawboard()
     drawpieces()
     pygame.display.update()
+###################################################################
+# piecedisappear()
+# clears the static location of a piece
+def piecedisappear(p):
+    tuplekey = piece.numtoletter(p.file, p.rank)
+    sqtobecleared = BOARD.SquareDict[(tuplekey[0], int(tuplekey[1]))]
+    drawboard()
+    drawpieces()
+    sqtobecleared.draw()   
 ###################################################################
 # main driver
 def main():
@@ -107,22 +114,34 @@ def main():
                     # check if there is a piece where the mouse has been clicked
                     if (board.PIECESloc[piece.numtoletter(x, y)] != None):
                         PIECEDRAG = True
-                        #grab the piece that is on that square
+                        # grab the piece that is on that square
                         p = board.PIECESloc[piece.numtoletter(x, y)]
-                        # #print moves:
+                        # print moves:
                         printmoves(p)
-                        refresh()
+                        # clear the old static piece
+                        piecedisappear(p)
+                        # get mouse position
+                        xloc = event.pos[0]
+                        yloc = event.pos[1]
+                        # need to check if mouse is going out of the window, then let go of piece
+                        piece2mouse(xloc, yloc, p)
             elif event.type == pygame.MOUSEBUTTONUP: # if mouse is unclicked
                 if event.button == 1:
+                    # stop dragging piece
                     PIECEDRAG = False
                     refresh()
+                    # need to check if dropped on a legal move, then place the piece there
+                    x = getmpos()[0]
+                    y = getmpos()[1]
+                    for move in p.moves:
+                        if ((x,y) == move):
+                            print("LEGAL MOVE")
+                            # p.move(x,y)
+                        else:
+                            print("ILLEGAL MOVE")
             elif pygame.mouse.get_pressed()[0] & PIECEDRAG: # while holding the piece
                 # make the piece dissapear from it's previous place:
-                tuplekey = piece.numtoletter(p.file, p.rank)
-                sqtobecleared = BOARD.SquareDict[(tuplekey[0], int(tuplekey[1]))]
-                drawboard()
-                drawpieces()
-                sqtobecleared.draw()
+                piecedisappear(p)
                 # get mouse position
                 xloc = event.pos[0]
                 yloc = event.pos[1]
@@ -137,7 +156,7 @@ def main():
                         break
                 else:
                     # move piece to mouse
-                    piece2mouse(event.pos[0], event.pos[1], p)
+                    piece2mouse(xloc, yloc, p)
 #################################while loop####################################################
         
     pygame.quit()

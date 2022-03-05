@@ -45,8 +45,9 @@ class Piece:
         self.rank = rank
 
     # moving a piece
-    def move(self):
-        pass
+    def move(self, x, y):
+        self.file = x
+        self.file = y
 
     # checking if a piece is selected
     def isSelected(self):
@@ -75,17 +76,17 @@ class pawn(Piece):
         # l = numtoletter(self.file, self.rank)[0]
         # if piece is black:
         if self.color == "b":
-            self.moves.append((filelist[self.file] , self.rank - 1))
+            self.moves.append((self.file , self.rank - 1))
             if self.rank == 6:
-                self.moves.append((filelist[self.file], self.rank - 2))
+                self.moves.append((self.file, self.rank - 2))
             # if self.CanTakeLeft:
             #     self.moves.append((l-1, self.rank - 1))
             # if self.CanTakeRight:
             #     self.moves.append((l+1, self.rank - 1))
         else:
-            self.moves.append((filelist[self.file], self.rank + 1))
+            self.moves.append((self.file, self.rank + 1))
             if self.rank == 1:
-                self.moves.append((filelist[self.file], self.rank + 2))
+                self.moves.append((self.file, self.rank + 2))
             # if self.CanTakeLeft:
             #     self.moves.append((l-1, self.rank + 1))
             # if self.CanTakeRight:
