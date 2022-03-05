@@ -22,6 +22,8 @@ circler = 20
 ###################################################################
 # available legal moves
 movesavail = []
+# squares that need to be cleared:
+clearsquare = None
 ###################################################################
 # drawcircle
 def circlemoves(surface, color, center, radius):
@@ -91,8 +93,7 @@ def main():
     mainboard.LoadFromFEN()
     refresh()
     PIECEDRAG = False
-
-    ###########################
+#################################while loop####################################################
     while run:
         clock.tick(fps)
         for event in pygame.event.get():
@@ -116,11 +117,15 @@ def main():
                     PIECEDRAG = False
                     refresh()
             elif pygame.mouse.get_pressed()[0] & PIECEDRAG: # while holding the piece
+                # make the piece dissapear from it's previous place:
+                tuplekey = piece.numtoletter(p.file, p.rank)
+                sqtobecleared = BOARD.SquareDict[(tuplekey[0], int(tuplekey[1]))]
                 drawboard()
                 drawpieces()
+                sqtobecleared.draw()
+                # get mouse position
                 xloc = event.pos[0]
                 yloc = event.pos[1]
-                print("[" + str(xloc) + ", " + str(yloc) + "]")
                 # need to check if mouse is going out of the window, then let go of piece
                 if  xloc >= width - 1  or \
                     yloc >= height - 1 or \
@@ -133,6 +138,7 @@ def main():
                 else:
                     # move piece to mouse
                     piece2mouse(event.pos[0], event.pos[1], p)
+#################################while loop####################################################
         
     pygame.quit()
 
