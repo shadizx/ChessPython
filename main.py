@@ -1,5 +1,6 @@
 # game.py
 # responsible for running the main program
+from weakref import ref
 import piecedirectory as pd
 import pygame
 import piece
@@ -98,7 +99,6 @@ def main():
     mainboard = board.Board()
     mainboard.LoadFromFEN()
     refresh()
-    PIECEDRAG = False
     PIECECLICKED = False
 #################################while loop####################################################
     while run:
@@ -113,7 +113,7 @@ def main():
                     ypos = getmpos()[1]
                     # check if there is a piece where the mouse has been clicked
                     if (pd.DIRECTORY[piece.numtoletter(xpos, ypos)] != None):
-                        PIECEDRAG = True
+                        # PIECEDRAG = True
                         PIECECLICKED = True
                         # grab the piece that is on that square
                         p = pd.DIRECTORY[piece.numtoletter(xpos, ypos)]
@@ -126,27 +126,30 @@ def main():
                         yloc = event.pos[1]
                         # need to check if mouse is going out of the window, then let go of piece
                         piece2mouse(xloc, yloc, p)
-                    else: movesavail.clear()
-
+                    else:
+                        # if clicked on board, remove available moves and refresh board
+                        movesavail.clear()
+                        refresh()
             elif event.type == pygame.MOUSEBUTTONUP: # if mouse is unclicked
                 if event.button == 1:
-                    # stop dragging piece
-                    PIECEDRAG = False
-                    refresh()
-                    if PIECECLICKED:
+                    if PIECECLICKED: # if previously clicked on piece
                         # need to check if dropped on a legal move, then place the piece there
                         x = getmpos()[0]
                         y = getmpos()[1]
                         
+                        tobemoved = False # see if it is able to move to that square
+
                         for move in p.moves:
-                            if ((x,y) == move):
-                                print("LEGAL MOVE")
-                                pd.DIRECTORY[piece.numtoletter(xpos, ypos)].move(x,y)
-                                movesavail.clear()
-                                refresh()
-                            else:
-                                print("ILLEGAL MOVE")
-            elif pygame.mouse.get_pressed()[0] & PIECEDRAG: # while holding the piece
+                            if ((x,y) == move): # if available move is found save coords
+                                tobemoved = True
+                                newx = x
+                                newy = y
+                        if tobemoved:
+                            pd.DIRECTORY[piece.numtoletter(xpos, ypos)].move(newx,newy)
+                            movesavail.clear()
+                        refresh()
+                        PIECECLICKED = False
+            elif pygame.mouse.get_pressed()[0] & PIECECLICKED: # while holding the piece
                 # make the piece dissapear from it's previous place:
                 piecedisappear(p)
                 # get mouse position
@@ -156,10 +159,8 @@ def main():
                 if  xloc >= width - 1  or \
                     yloc >= height - 1 or \
                     xloc <= 1 or yloc <= 1:
-                        print("REACHED BORDER")
                         movesavail.clear()
                         refresh()
-                        PIECEDRAG = False
                         break
                 else:
                     # move piece to mouse
