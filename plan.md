@@ -42,7 +42,10 @@ Notes: 2022/02/24 (midnight!)
 - [ ] knight moves, bishop moves, queen moves, king moves, rook moves
 
 - [ ] in game.py, implement taking, blocked pieces, en passant, castling, check, checkmate, stalemate
+
+--------------------------------------------------------------------------------------------
 2022/03/04 - Shadi
 - finished drag implementation
 # next steps:
 - [ ] finish dropping implementation
+--------------------------------------------------------------------------------------------

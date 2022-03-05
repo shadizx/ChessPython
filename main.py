@@ -11,7 +11,7 @@ from copy import copy, deepcopy
 width = height = 640                           # constant width and height, set for basic testing
 win = pygame.display.set_mode((width, height)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
-fps = 60                                       # setting fps of game
+fps = 120                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 BOARD = board.Board()
@@ -90,8 +90,9 @@ def main():
     mainboard = board.Board()
     mainboard.LoadFromFEN()
     refresh()
-    ###########################
     PIECEDRAG = False
+
+    ###########################
     while run:
         clock.tick(fps)
         for event in pygame.event.get():
@@ -107,20 +108,32 @@ def main():
                         PIECEDRAG = True
                         #grab the piece that is on that square
                         p = board.PIECESloc[piece.numtoletter(x, y)]
-                        #print moves:
+                        # #print moves:
                         printmoves(p)
                         refresh()
             elif event.type == pygame.MOUSEBUTTONUP: # if mouse is unclicked
-                if event.button == 1:            
+                if event.button == 1:
+                    PIECEDRAG = False
                     refresh()
             elif pygame.mouse.get_pressed()[0] & PIECEDRAG: # while holding the piece
                 drawboard()
                 drawpieces()
-                # get mouse position
-                x = getmpos()[0]
-                y = getmpos()[1]
-                # move piece to mouse
-                piece2mouse(event.pos[0], event.pos[1], p)
+                xloc = event.pos[0]
+                yloc = event.pos[1]
+                print("[" + str(xloc) + ", " + str(yloc) + "]")
+                # need to check if mouse is going out of the window, then let go of piece
+                if  xloc >= width - 1  or \
+                    yloc >= height - 1 or \
+                    xloc <= 1 or yloc <= 1:
+                        print("REACHED BORDER")
+                        movesavail.clear()
+                        refresh()
+                        PIECEDRAG = False
+                        break
+                else:
+                    # move piece to mouse
+                    piece2mouse(event.pos[0], event.pos[1], p)
+        
     pygame.quit()
 
 if __name__ == "__main__":
