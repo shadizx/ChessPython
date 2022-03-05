@@ -39,7 +39,7 @@ class fen():
     FILELIST = ["a","b","c","d","e","f","g","h"]
     RANKLIST = [1,2,3,4,5,6,7,8]
     castling_dict = {'k': "black_kingside", 'K': "white_kingside", 'q': "black_queenside", 'Q': "white_queenside"}  # TODO: edit this!
-    StartFEN = "rnbqkbnr/pppppppp/8/8/6p1/6P1/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    StartFEN = DEFAULTFEN
     CastlingsAllowed = []  # resets castles so we can assign them again here
     turn_dict = {'w': 0, 'b': 1}  # TODO: edit this as required!
     STARTPIECES = []  # might want to set up the entire starting position pieces into this if you want to avoid initializing board from FEN

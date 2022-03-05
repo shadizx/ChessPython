@@ -16,19 +16,27 @@ dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 BOARD = board.Board()
 piecedrag = False
-###################### constants ############################
+circlex = 40
+circley = -40
+circler = 20
+###################################################################
+# available legal moves
+movesavail = []
+###################################################################
 # drawcircle
-def drawmoves(surface, color, center, radius):
+def circlemoves(surface, color, center, radius):
     place = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
     surf = pygame.Surface(place.size, pygame.SRCALPHA)
     pygame.draw.circle(surf, color, (radius, radius), radius)
-    surface.blit(surf, place)
-##################################################################
+    return (surf, place)
+###################################################################
 # drawboard()
 # useful for drawing the board
 def drawboard():
     for square in BOARD.SquareDict.values():
         square.draw()
+    for m in movesavail:
+        win.blit(m[0], m[1])
 ###################################################################
 # drawpieces()
 # useful for drawing the pieces
@@ -44,42 +52,36 @@ def getmpos():
     y = 7 - pos[1] // 80
     return (x,y)
 ###################################################################
-# piececlicked
+# printmoves
 # returns the location of the piece clicked, null if no piece has been clicked
-def piececlicked():
-    #reload board and pieces so legal moves get erased:
+def printmoves(p):
+    #refresh movesavail:
+    movesavail.clear()
+    #load moves
+    p.legalmoves()
+    # loop through legal moves to show each legal move
+    for move in p.moves:
+        # translate a tuple such as ('g', 2) to corresponding file and rank (7,1)
+        fr = piece.tupletranslate(move)
+        #load the legal moves on the board
+        circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * fr[0] + circlex, height-dimension*(fr[1]+1) + circley), circler)
+        movesavail.append(circleimg)
+###################################################################
+# piece2mouse
+# moves a piece image location to the center of the mouse
+def piece2mouse(mousex, mousey, p):
+    xloc = mousex - 78/2
+    yloc = mousey - 78/2
+    win.blit(p.img, (xloc, yloc))
+    pygame.display.flip()
+###################################################################
+# refresh()
+# refreshes the board
+def refresh():
     drawboard()
     drawpieces()
-    # get the mouse location
-    x = getmpos()[0]
-    y = getmpos()[1]
-    # constants for circle dimension
-    circlex = 40
-    circley = -40
-    circler = 20
-    # check if there is a piece where the mouse has been clicked
-    if (board.PIECESloc[piece.numtoletter(x, y)] != None):
-        # grab the piece that is on that square
-        p = board.PIECESloc[piece.numtoletter(x, y)]
-        # load the legal moves of that piece
-
-        p.legalmoves()
-
-        # loop through legal moves to show each legal move
-        for move in p.moves:
-            # translate a tuple such as ('g', 2) to corresponding file and rank (7,1)
-            fr = piece.tupletranslate(move)
-            #draw the legal moves on the board
-            drawmoves(win, (0, 0, 0, 127), (dimension * fr[0] + circlex, height-dimension*(fr[1]+1) + circley), circler)
-            pygame.display.update()
-
-        # pygame.draw.rect(win, (255, 0, 0, 127), pygame.Rect((dimension*(3)), (height-dimension*(3)), dimension, dimension))
-        # pygame.draw.rec(win, )
-
-    
-    # return (x,y)
+    pygame.display.update()
 ###################################################################
-
 # main driver
 def main():
     # running main window
@@ -87,44 +89,38 @@ def main():
     run = True
     mainboard = board.Board()
     mainboard.LoadFromFEN()
-    drawboard()
-    drawpieces()
-    pygame.display.update()
-
+    refresh()
+    ###########################
+    PIECEDRAG = False
     while run:
         clock.tick(fps)
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # if program is executed
                 run = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # if left-clicked
                     #get mouse pos
                     x = getmpos()[0]
                     y = getmpos()[1]
                     # check if there is a piece where the mouse has been clicked
                     if (board.PIECESloc[piece.numtoletter(x, y)] != None):
-                        #print square that mouse is on
-                        print(piece.numtoletter(x,y))
+                        PIECEDRAG = True
+                        #grab the piece that is on that square
+                        p = board.PIECESloc[piece.numtoletter(x, y)]
                         #print moves:
-                        piececlicked()
-
-                    
-            if pygame.mouse.get_pressed()[0]: # while holding the piece
-                try:
-                    x = event.pos[0]
-                    y = event.pos[1]
-                    filex = x // dimension
-                    filey = y // dimension
-                    print("[" + str(filex) + ", " + str(filey) + "]")
-                except AttributeError:
-                    pass
-                    # mainboard = board.Board()
-                    # mainboard.LoadFromFEN()
-                    # pieceimgs = board.Board()
-                    # for p in pieceimgs.Pieces:
-                    #     if p.rect.collidepoint(pos):
-                    #         p.clicked = True
-
+                        printmoves(p)
+                        refresh()
+            elif event.type == pygame.MOUSEBUTTONUP: # if mouse is unclicked
+                if event.button == 1:            
+                    refresh()
+            elif pygame.mouse.get_pressed()[0] & PIECEDRAG: # while holding the piece
+                drawboard()
+                drawpieces()
+                # get mouse position
+                x = getmpos()[0]
+                y = getmpos()[1]
+                # move piece to mouse
+                piece2mouse(event.pos[0], event.pos[1], p)
     pygame.quit()
 
 if __name__ == "__main__":
