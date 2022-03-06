@@ -91,12 +91,13 @@ class Piece:
     def all_moves(self):  # only used for regular move generation
         phantom = Phantom(self.color, self.type, self.file, self.rank)
         moves = phantom.generate_moves()
-        self.moves = moves
+        return moves
 
     def legalmoves(self):
         phantom = Phantom(self.color, self.type, self.file, self.rank)
         moves = phantom.generate_legal_moves()
         self.moves = moves
+        return moves  # returns moves for easier access
 # Class piece ---------------------------------------------
 class Phantom(Piece):  # a piece without a type for measuring allowed movements
     def __init__(self, color, type,  file, rank):
@@ -196,19 +197,20 @@ class Phantom(Piece):  # a piece without a type for measuring allowed movements
         return moveSquares
             
     def generate_legal_moves(self):  # generates moves for any piece regardless of type 
-        if pd.TURN == self.color:
-            moveSquares = self.generate_moves()
+        moveSquares = self.generate_moves()
         opponentMoves = []
         finalSquares = []
-        kingLocation = findpiece('k', self.color)
+        
         for s in moveSquares:
             self.move_hypothetical(s[0], s[1])
+            kingLocation = findpiece('k', self.color)
             for p in pd.HYP_DIRECTORY:
                 if pd.HYP_DIRECTORY[p] != None:
                     moves = pd.HYP_DIRECTORY[p].all_moves()
-                    if moves is not None:
-                        opponentMoves.extend(moves)
+                    # print(moves)  # test
+                    opponentMoves.extend(moves)
             pd.HYP_DIRECTORY = copy(pd.DIRECTORY)  # assign hypothetical back to normal every time
+            pd.HYP_TURN = pd.TURN  # resets the turn
             if kingLocation not in opponentMoves:  # only accept the move if king won't be taken next turn
                 finalSquares.append(s)
         return finalSquares
