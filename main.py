@@ -13,17 +13,16 @@ dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 BOARD = board.Board()
 piecedrag = False
+# circle dimensions for showing legal moves
 circlex = 40
 circley = -40
 circler = 20
-##############################################################
 # available legal moves
 movesavail = []
 ##############################################################
 # piece directory
 # start of with directory of starting pieces
-mainboard = board.Board()
-DIRECTORY = mainboard.LoadFromFEN()
+DIRECTORY = BOARD.LoadFromFEN()
 ###################################################################
 # drawcircle
 def circlemoves(surface, color, center, radius):
@@ -35,7 +34,7 @@ def circlemoves(surface, color, center, radius):
 # drawboard()
 # useful for drawing the board
 def drawboard():
-    for square in BOARD.boardColors.values():
+    for square in BOARD.boardColors:
         square.draw()
     for m in movesavail:
         win.blit(m[0], m[1])

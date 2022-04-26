@@ -1,7 +1,7 @@
 # board.py
 # responsible for boad structure and operations
 import pygame
-from copy import copy, deepcopy
+from copy import copy
 import piece
 
 ###################### constants ############################
@@ -26,8 +26,6 @@ class fen():
                    'P': piece.pawn("w"),   'N': piece.knight("w"),
                    'B': piece.bishop("w"), 'R': piece.rook("w"),
                    'Q': piece.queen("w"),  'K': piece.king("w")}
-    FILELIST = ["a","b","c","d","e","f","g","h"]
-    RANKLIST = [1,2,3,4,5,6,7,8]
     castling_dict = {'k': "black_kingside", 'K': "white_kingside", 'q': "black_queenside", 'Q': "white_queenside"}  # TODO: edit this!
     StartFEN = DEFAULTFEN
     CastlingsAllowed = []  # resets castles so we can assign them again here
@@ -79,37 +77,34 @@ class Square:
     WHITE=(248,220,180)
     BLACK=(184,140,100)
 
-    def __init__(self, file, rank, color):
-        self.file = file
-        self.rank = rank
+    def __init__(self, position, color):
+        self.position = position
         self.isWhite = color
         self.color = self.WHITE if self.isWhite else self.BLACK
 
     def draw(self):
-        pygame.draw.rect(win, self.color, pygame.Rect((dimension*(self.file)), (height-dimension*(self.rank+1)), dimension, dimension))
+        x = (self.position % 8)
+        y = (self.position - x) / 8
+        print("x is " + str(x) + "y is " + str(y))
+        pygame.draw.rect(win, self.color, pygame.Rect(x * dimension, y * dimension, dimension, dimension))
 
 # class square
 ###################################################################
 
 ###################################################################
 # class Board
-# inherits from fen, responsible for structure of board
+# inherits from fen, responsible for board square colors
 class Board(fen):
 
-    boardColors = {}
-    Pieces = []
-    Turn = 'w' # placeholder for further editing, if functionality is needed by game.py
-    EnPassantSquare = None
-    MovesSinceLastPawn = 0
-    MoveNumber = 1
+    boardColors = []
 
     def __init__(self):
-        for indexf, l in enumerate(self.FILELIST):
-            for indexr, n in enumerate(self.RANKLIST):
-                isWhite = (indexf + indexr) % 2 != 0
-                temp = Square(indexf, indexr, isWhite)
-                self.boardColors[(l, n)] = temp
+        for i in range(8):
+            for j in range(8):
+                position = 8 * j + i
+                isWhite = (i + j) % 2 != 0
+                temp = Square(position, isWhite)
+                self.boardColors.append(temp)
         self.FEN = self.StartFEN
-
 #class board
 ###################################################################
