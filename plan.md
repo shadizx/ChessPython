@@ -22,7 +22,7 @@ Notes: 2022/02/24 (midnight!)
  + An if/else statement could work as a cheap fix because only the picture is corrupted
 
 # TODO:
-- [X] Design moves for each piece...
+- [ ] Design moves for each piece...
 
 2022/02/25 - Shadi, 2 hour session
 - fixed all image issues, board is in crisp quality
@@ -31,28 +31,25 @@ Notes: 2022/02/24 (midnight!)
 
 # next steps:
 - [X] clean up the code along with the variables
-- [X] drag and drop a piece
+- [ ] drag and drop a piece
 
 2022/03/04 - Shadi, progress over 3 days with minimum work each day
 - implemented showing the legal moves of pawns (without moving)
 - plan is to do the same for all other pieces
 # next steps:
-- [X] drag and drop a piece
-- [X] Calculation to end of board in piece.py
-- [X] knight moves, bishop moves, queen moves, king moves, rook moves
+- [ ] drag and drop a piece
+- [ ] Calculation to end of board in piece.py
+- [ ] knight moves, bishop moves, queen moves, king moves, rook moves
 
-- [X] in game.py, implement taking, blocked pieces, en passant, castling, check, checkmate, stalemate
+- [ ] in game.py, implement taking, blocked pieces, en passant, castling, check, checkmate, stalemate
 
 --------------------------------------------------------------------------------------------
 2022/03/04 - Shadi
 - finished drag implementation
 # next steps:
-- [X] finish dropping implementation
+- [ ] finish dropping implementation
 --------------------------------------------------------------------------------------------
-2022/03/04 - Roham
-- implemented moves for all pieces
-- castle and checks still iffy
-# next steps:
-- [ ] fix moving of pieces and blocking castles
-- [ ] try to find a better implementation of phantom idea
---------------------------------------------------------------------------------------------
+
+4/25/2022 - Shadi
+git checkout to older git branch where there wasn't hyp or phantom
+trying to restructure code, then add in piece moves
