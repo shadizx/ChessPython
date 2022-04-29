@@ -116,7 +116,6 @@ def main():
                     pos = 8 * ypos + xpos
                     # check if there is a piece where the mouse has been clicked
                     if (DIRECTORY[pos] != None):
-                        # PIECEDRAG = True
                         PIECECLICKED = True
                         # grab the piece that is on that square
                         p = DIRECTORY[pos]
@@ -144,13 +143,10 @@ def main():
                         tobemoved = False # see if it is able to move to that square
 
                         for move in p.moves:
-                            if ((x,y) == move): # if available move is found save coords
+                            if (pos == move): # if available move is found save coords
                                 tobemoved = True
-                                newx = x
-                                newy = y
-                        if tobemoved:
-                            DIRECTORY[pos].setPos(newx,newy)
-                            movesavail.clear()
+                                p.setPos(pos)
+                                movesavail.clear()
                         refresh()
                         PIECECLICKED = False
             elif pygame.mouse.get_pressed()[0] & PIECECLICKED: # while holding the piece
