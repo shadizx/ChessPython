@@ -50,7 +50,7 @@ class fen():
                 position = 8 * rank + file
 
                 piece = copy(self.PIECES_DICT[s])  # IMPORTANT: generate a COPY of the object to avoid overwrite issues!
-                piece.setpos(position)
+                piece.setPos(position)
                 self.pieceList[position] = piece
                 file += 1
         for s in splitfen[1]:  # Toggle turns
@@ -85,7 +85,6 @@ class Square:
     def draw(self):
         x = (self.position % 8)
         y = (self.position - x) / 8
-        print("x is " + str(x) + "y is " + str(y))
         pygame.draw.rect(win, self.color, pygame.Rect(x * dimension, y * dimension, dimension, dimension))
 
 # class square
@@ -102,7 +101,7 @@ class Board(fen):
         for i in range(8):
             for j in range(8):
                 position = 8 * j + i
-                isWhite = (i + j) % 2 != 0
+                isWhite = (i + j) % 2 == 0
                 temp = Square(position, isWhite)
                 self.boardColors.append(temp)
         self.FEN = self.StartFEN
