@@ -97,10 +97,24 @@ class Board(fen):
     boardColors = []
 
     def __init__(self):
-        for position in range(64):
-            isWhite = sum(piece.getRankFile(position)) % 2 != 0
-            temp = Square(position, isWhite)
-            self.boardColors.append(temp)
         self.FEN = self.StartFEN
+
+    def generateMoves(self):
+        pass
+
+    def draw(self):
+        # first time draw is called, load the square
+        # next time, just draw the squares
+        if len(self.boardColors) == 0:
+            for position in range(64):
+                isWhite = sum(piece.getRankFile(position)) % 2 != 0
+                temp = Square(position, isWhite)
+                temp.draw()
+                self.boardColors.append(temp)
+        else:
+            for square in self.boardColors:
+                square.draw()
+
+        
 #class board
 ###################################################################

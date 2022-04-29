@@ -55,7 +55,7 @@ git checkout to older git branch where there wasn't hyp or phantom
 trying to restructure code, then add in piece moves
 
 4/28/2022 - Roham
-- [ ] clean up piece.py and remove legal moves (add to board later) - SHADI
+- [X] clean up piece.py and remove legal moves (add to board later) - SHADI
 - [ ] make the unblocked set of moves for each piece in boards - ROHAM
 - [ ] make a function to generate all moves and add them to a dictionary mapped with position of the piece (board class, board.py) - ROHAM
 - [ ] make a function to generate all legal moves (board.py) with altering the board state after each move - ROHAM

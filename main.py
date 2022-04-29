@@ -34,8 +34,7 @@ def circlemoves(surface, color, center, radius):
 # drawboard()
 # useful for drawing the board
 def drawboard():
-    for square in BOARD.boardColors:
-        square.draw()
+    BOARD.draw()
     for m in movesavail:
         win.blit(m[0], m[1])
 ###################################################################

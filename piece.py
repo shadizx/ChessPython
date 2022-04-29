@@ -35,13 +35,9 @@ class Piece:
     # checking if a piece is selected
     def isSelected(self):
         return self.selected
-
     # printing a piece on the board, centralized on their respective squares:
     def draw(self):
         yloc, xloc = divmod(self.position, 8)
-        # xloc = (self.position % 8)
-        # yloc = ((self.position - xloc)/8)
-        # print(self.color + " " + self.type + " at position (" + str(xloc) + ", " + str(yloc) + ")")
         win.blit(self.img, ((xloc * dimension), height - dimension -  yloc * dimension))
 # Class piece ---------------------------------------------
 
@@ -53,34 +49,20 @@ class pawn(Piece):
     def __init__(self, color, position = 0):
         super().__init__(color, type="p")  # have to keep it like this for the defaults to work!
         self.type = "p"
-    def legalmoves(self):
-        self.moves = []
-        # if king will not be in check after piece moves
-        #   if there is no piece in way of the current piece
-        #       then move the piece
+    # def legalmoves(self):
+    #     self.moves = []
+    #     # if king will not be in check after piece moves
+    #     #   if there is no piece in way of the current piece
+    #     #       then move the piece
 
-        # grab the file of the piece
-        # if piece is black:
-        if self.color == "b":
-            self.moves.append(self.position - 8)
-            self.moves.append(self.position - 16)
-            # if self.rank == 6:
-            #     self.moves.append((self.position, self.rank - 2))
-            # if self.CanTakeLeft:
-            #     self.moves.append((l-1, self.rank - 1))
-            # if self.CanTakeRight:
-            #     self.moves.append((l+1, self.rank - 1))
-        else:
-            self.moves.append(self.position + 8)
-            self.moves.append(self.position + 16)
-            # if self.rank == 1:
-            #     self.moves.append((self.file, self.rank + 2))
-            # if self.CanTakeLeft:
-            #     self.moves.append((l-1, self.rank + 1))
-            # if self.CanTakeRight:
-            #     self.moves.append((l+1, self.rank + 1))
-
-        # print(f"my legal moves are {self.moves}")
+    #     # grab the file of the piece
+    #     # if piece is black:
+    #     if self.color == "b":
+    #         self.moves.append(self.position - 8)
+    #         self.moves.append(self.position - 16)
+    #     else:
+    #         self.moves.append(self.position + 8)
+    #         self.moves.append(self.position + 16)
 
 # class pawn(piece) ----------------------------------------
 
