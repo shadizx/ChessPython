@@ -43,7 +43,7 @@ def drawboard():
 # useful for drawing the pieces
 def drawpieces():
     for i in range(64):
-        if DIRECTORY[i] != None:
+        if DIRECTORY[i] is not None:
             DIRECTORY[i].draw()
 
 ###################################################################
@@ -64,19 +64,18 @@ def printmoves(p):
     p.legalmoves()
     # loop through legal moves to show each legal move
     for move in p.moves:
-        print(move)
+        # print(move)
         #load the legal moves on the board
-        x = move % 8
-        y = (move - x) / 8
-        print("x = " + str(x) + ", y = " + str(y))
-        circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)
+        y, x = piece.getRankFile(move)
+        # print(f'{x = }, {y = }')
+        circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)  # TODO: check this
         movesavail.append(circleimg)
 ###################################################################
 # piece2mouse
 # moves a piece image location to the center of the mouse
 def piece2mouse(mousex, mousey, p):
-    xloc = mousex - 78/2
-    yloc = mousey - 78/2
+    xloc = mousex - piece.piece_size//2 - 3
+    yloc = mousey - piece.piece_size//2 - 3
     win.blit(p.img, (xloc, yloc))
     pygame.display.flip()
 ###################################################################

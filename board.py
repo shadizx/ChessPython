@@ -83,9 +83,8 @@ class Square:
         self.color = self.WHITE if self.isWhite else self.BLACK
 
     def draw(self):
-        x = (self.position % 8)
-        y = (self.position - x) / 8
-        pygame.draw.rect(win, self.color, pygame.Rect(x * dimension, y * dimension, dimension, dimension))
+        y, x = divmod(self.position, 8)
+        pygame.draw.rect(win, self.color, pygame.Rect(x * dimension, height - (y+1) * dimension, dimension, dimension))
 
 # class square
 ###################################################################
@@ -98,12 +97,10 @@ class Board(fen):
     boardColors = []
 
     def __init__(self):
-        for i in range(8):
-            for j in range(8):
-                position = 8 * j + i
-                isWhite = (i + j) % 2 == 0
-                temp = Square(position, isWhite)
-                self.boardColors.append(temp)
+        for position in range(64):
+            isWhite = sum(piece.getRankFile(position)) % 2 != 0
+            temp = Square(position, isWhite)
+            self.boardColors.append(temp)
         self.FEN = self.StartFEN
 #class board
 ###################################################################

@@ -2,6 +2,7 @@
 # responsible for functionality of the pieces
 import pygame
 
+
 ###################### constants ############################
 width = height = 640                           # constant width and height, set for basic testing
 win = pygame.display.set_mode((width, height)) # setting window width and height
@@ -10,7 +11,8 @@ fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 ###################### constants ###########################      
-
+getRankFile = lambda position: divmod(position, 8)
+getPos = lambda y, x: y*8+x
 ############################################################   
 # Class piece -------------------------------------------
 # general parent class for each piece, is inherited from for efficient code
@@ -36,8 +38,9 @@ class Piece:
 
     # printing a piece on the board, centralized on their respective squares:
     def draw(self):
-        xloc = (self.position % 8)
-        yloc = ((self.position - xloc)/8)
+        yloc, xloc = divmod(self.position, 8)
+        # xloc = (self.position % 8)
+        # yloc = ((self.position - xloc)/8)
         # print(self.color + " " + self.type + " at position (" + str(xloc) + ", " + str(yloc) + ")")
         win.blit(self.img, ((xloc * dimension), height - dimension -  yloc * dimension))
 # Class piece ---------------------------------------------
