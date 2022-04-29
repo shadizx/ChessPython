@@ -59,5 +59,5 @@ trying to restructure code, then add in piece moves
 - [ ] make the unblocked set of moves for each piece in boards - ROHAM
 - [ ] make a function to generate all moves and add them to a dictionary mapped with position of the piece (board class, board.py) - ROHAM
 - [ ] make a function to generate all legal moves (board.py) with altering the board state after each move - ROHAM
-- [ ] make pieces able to move again - SHADI
+- [X] make pieces able to move again - SHADI
 
