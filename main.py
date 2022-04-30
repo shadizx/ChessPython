@@ -12,6 +12,7 @@ fps = 120                                      # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 BOARD = board.Board()
+DIRECTORY = BOARD.pieceList
 piecedrag = False
 # circle dimensions for showing legal moves
 circlex = 40
@@ -20,9 +21,9 @@ circler = 20
 # available legal moves
 movesavail = []
 ##############################################################
-# piece directory
-# start of with directory of starting pieces
-DIRECTORY = BOARD.LoadFromFEN()
+# piece BOARD
+# start of with BOARD of starting pieces
+# BOARD = BOARD
 ###################################################################
 # drawcircle
 def circlemoves(surface, color, center, radius):
@@ -41,9 +42,9 @@ def drawboard():
 # drawpieces()
 # useful for drawing the pieces
 def drawpieces():
-    for i in range(64):
-        if DIRECTORY[i] is not None:
-            DIRECTORY[i].draw()
+    for i in DIRECTORY.values():
+        if i is not None:
+            i.draw()
 
 ###################################################################
 # getmpos
@@ -98,6 +99,7 @@ def main():
     # running main window
     clock = pygame.time.Clock()
     run = True
+    BOARD.generateMoves()
 
     refresh()
     PIECECLICKED = False

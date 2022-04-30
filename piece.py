@@ -49,20 +49,20 @@ class pawn(Piece):
     def __init__(self, color, position = 0):
         super().__init__(color, type="p")  # have to keep it like this for the defaults to work!
         self.type = "p"
-    # def legalmoves(self):
-    #     self.moves = []
-    #     # if king will not be in check after piece moves
-    #     #   if there is no piece in way of the current piece
-    #     #       then move the piece
+    def legalmoves(self):
+        self.moves = []
+        # if king will not be in check after piece moves
+        #   if there is no piece in way of the current piece
+        #       then move the piece
 
-    #     # grab the file of the piece
-    #     # if piece is black:
-    #     if self.color == "b":
-    #         self.moves.append(self.position - 8)
-    #         self.moves.append(self.position - 16)
-    #     else:
-    #         self.moves.append(self.position + 8)
-    #         self.moves.append(self.position + 16)
+        # grab the file of the piece
+        # if piece is black:
+        if self.color == "b":
+            self.moves.append(self.position - 8)
+            self.moves.append(self.position - 16)
+        else:
+            self.moves.append(self.position + 8)
+            self.moves.append(self.position + 16)
 
 # class pawn(piece) ----------------------------------------
 

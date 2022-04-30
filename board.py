@@ -1,8 +1,10 @@
 # board.py
 # responsible for boad structure and operations
+from types import NoneType
 import pygame
 from copy import copy
 import piece
+from dataclasses import dataclass
 
 ###################### constants ############################
 width = height = 640                           # constant width and height, set for basic testing
@@ -12,14 +14,16 @@ fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-###################### constants ############################
+###################### global variables ############################
 
 ##############################################################
 # class fen
 # store default values used for board translation
-# returns piecelist array
+
+@dataclass# returns piecelist array
 class fen():
     # public values to be accessed later on
+    FEN: str
     PIECES_DICT = {'p': piece.pawn("b"),   'n': piece.knight("b"),
                    'b': piece.bishop("b"), 'r': piece.rook("b"),
                    'q': piece.queen("b"),  'k': piece.king("b"),
@@ -27,12 +31,12 @@ class fen():
                    'B': piece.bishop("w"), 'R': piece.rook("w"),
                    'Q': piece.queen("w"),  'K': piece.king("w")}
     castling_dict = {'k': "black_kingside", 'K': "white_kingside", 'q': "black_queenside", 'Q': "white_queenside"}  # TODO: edit this!
-    StartFEN = DEFAULTFEN
+    # StartFEN = DEFAULTFEN
     CastlingsAllowed = []  # resets castles so we can assign them again here
     turn_dict = {'w': 0, 'b': 1}  # TODO: edit this as required!
 
     # assigning pieceList array
-    pieceList = [None] * 64
+    pieces = {}
     # LoadfromFEN
     # load the board from a FEN
     def LoadFromFEN(self):
@@ -51,7 +55,7 @@ class fen():
 
                 piece = copy(self.PIECES_DICT[s])  # IMPORTANT: generate a COPY of the object to avoid overwrite issues!
                 piece.setPos(position)
-                self.pieceList[position] = piece
+                self.pieces[position] = piece
                 file += 1
         for s in splitfen[1]:  # Toggle turns
             self.Turn = 'w' if s == 'w' else 'b'
@@ -64,7 +68,7 @@ class fen():
         self.MovesSinceLastPawn = int(splitfen[4])  # determine moves since last pawn move (for 50-move rule)
         self.MoveNumber = int(splitfen[5])  # determine move number
 
-        return self.pieceList
+        return self.pieces
 
 # class fen
 ###################################################################
@@ -92,15 +96,26 @@ class Square:
 ###################################################################
 # class Board
 # inherits from fen, responsible for board square colors
-class Board(fen):
+class Board:
 
+    # holds boardcolors
     boardColors = []
+    # dict that maps a position to a piece
+    posDirectory = {}
+    # list that maps a position to the legal moves of the piece on that position
+    moveList = []
+    FEN = DEFAULTFEN
 
     def __init__(self):
-        self.FEN = self.StartFEN
+        self.pieceList = fen(self.FEN).LoadFromFEN()
+        print(self.pieceList)
 
     def generateMoves(self):
-        pass
+        for piece in self.pieceList.values():
+            if piece.type == "p":
+                # generatePmoves(p)
+                pass
+                
 
     def draw(self):
         # first time draw is called, load the square
