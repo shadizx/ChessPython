@@ -1,6 +1,8 @@
 # board.py
 # responsible for boad structure and operations
+from distutils.file_util import move_file
 from types import NoneType
+from numpy import take
 import pygame
 from copy import copy
 import piece
@@ -100,23 +102,118 @@ class Board:
 
     # holds boardcolors
     boardColors = []
-    # dict that maps a position to a piece
-    posDirectory = {}
-    # list that maps a position to the legal moves of the piece on that position
-    moveList = []
+    # dict that maps a position to the legal moves of the piece on that position
+    moveDict = {}
+    # start with this FEN
     FEN = DEFAULTFEN
 
     def __init__(self):
         self.pieceList = fen(self.FEN).LoadFromFEN()
-        print(self.pieceList)
+        self.generateMoves()
 
+
+    # generateMoves
+    # useful for generating the moves of board
     def generateMoves(self):
+        # clear the moveDict
+        self.moveDict.clear()
         for piece in self.pieceList.values():
-            if piece.type == "p":
-                # generatePmoves(p)
-                pass
-                
+            if piece.type == 'p':
+                self.loadpmoves(piece)
+            elif piece.type == "r":
+                self.loadrmoves(piece)
+            elif piece.type == "n":
+                self.loadnmoves(piece)
+            elif piece.type == "b":
+                self.loadbmoves(piece)
+            elif piece.type == "q":
+                self.loadqmoves(piece)
+            elif piece.type == "k":
+                self.loadkmoves(piece)
+    # loadpmoves
+    # loads pawn moves for all pawns
+    def loadpmoves(self, piece):
+        # take piece position into pos for ease of use
+        pos = piece.position
+        # assign col to -1 or 1 to make it easier to calculate legal moves for w or b pawn
+        if piece.color == "w": 
+            col = 1
+        else: 
+            col = -1
+        #######################################################################
+        # first lets calculate just moving the pawn:
+        # if the position in front of the pawn is empty
+        if pos + 8 * col not in self.pieceList:
+            #if the position does not exist in moveDict add the position
+            if pos not in self.moveDict:
+                self.moveDict[pos] = [pos + 8 * col]
+            else:
+                self.moveDict[pos].append(pos + 8 * col)
 
+            # if on first move then add the extra 2 spaced move
+            # if white and on 2nd rank, or black and on 7th rank
+            if (pos // 8 == 1 and col == 1) or (pos // 8 == 6 and col == -1):
+                print("color " + piece.color)
+                if pos + 16 * col not in self.pieceList:
+                    #if the position does not exist in moveDict add the position
+                    if pos not in self.moveDict:
+                        self.moveDict[pos] = [pos + 16 * col]
+                    else:
+                        self.moveDict[pos].append(pos + 16 * col)
+        #######################################################################
+        # now lets calculate taking a piece
+        # check if there is a pawn diagonal from the current pawn and opposite color
+        for takePos in [pos + 9 * col, pos + 7 * col]:
+            if takePos in self.pieceList and self.pieceList[takePos].color != piece.color:
+                # need to add an extra check for pawns on the edge of the board
+                # check if file of the takePos is way different than file of pos
+                if abs((takePos % 8) - (pos % 8)) == 1:
+                    if pos not in self.moveDict:
+                        self.moveDict[pos] = [takePos]
+                    else:
+                        self.moveDict[pos].append(takePos)
+
+    # loadnmoves
+    # loads knight moves for all knights
+    def loadnmoves(self, piece):
+        pass
+
+    # loadrmoves
+    # loads rook moves for all rooks
+    def loadrmoves(self, piece):
+        pass
+
+    # loadbmoves
+    # loads bishop moves for all bishops
+    def loadbmoves(self, piece):
+        pass
+
+    # loadqmoves
+    # loads queen moves for all queens
+    def loadqmoves(self, piece):
+        pass
+
+    # loadkmoves
+    # loads king moves for all kings
+    def loadkmoves(self, piece):
+        pass
+
+    # makeMove
+    # useful for moving a piece and updating our directory accordingly
+    def makeMove(self, piece, pos):
+        # get previous position to delete from dicts
+        previousPos = piece.position
+        # change position of piece
+        piece.setPos(pos)
+
+        # update board piecelist
+        #   delete previous key 
+        del self.pieceList[previousPos]
+        #   update with new pos and piece
+        self.pieceList[pos] = piece
+    
+    # draw
+    # draws board squares
     def draw(self):
         # first time draw is called, load the square
         # next time, just draw the squares
@@ -130,6 +227,5 @@ class Board:
             for square in self.boardColors:
                 square.draw()
 
-        
 #class board
 ###################################################################

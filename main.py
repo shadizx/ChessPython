@@ -42,7 +42,7 @@ def drawboard():
 # drawpieces()
 # useful for drawing the pieces
 def drawpieces():
-    for i in DIRECTORY.values():
+    for i in BOARD.pieceList.values():
         if i is not None:
             i.draw()
 
@@ -60,16 +60,14 @@ def getmpos():
 def printmoves(p):
     #refresh movesavail:
     movesavail.clear()
-    #load moves
-    p.legalmoves()
     # loop through legal moves to show each legal move
-    for move in p.moves:
-        # print(move)
-        #load the legal moves on the board
-        y, x = piece.getRankFile(move)
-        # print(f'{x = }, {y = }')
-        circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)  # TODO: check this
-        movesavail.append(circleimg)
+    if p.position in BOARD.moveDict:
+        for move in BOARD.moveDict[p.position]:
+            #load the legal moves on the board
+            y, x = piece.getRankFile(move)
+            # print(f'{x = }, {y = }')
+            circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)  # TODO: check this
+            movesavail.append(circleimg)
 ###################################################################
 # piece2mouse
 # moves a piece image location to the center of the mouse
@@ -116,10 +114,10 @@ def main():
                     ypos = getmpos()[1]
                     pos = 8 * ypos + xpos
                     # check if there is a piece where the mouse has been clicked
-                    if (DIRECTORY[pos] != None):
+                    if (pos in BOARD.pieceList):
                         PIECECLICKED = True
                         # grab the piece that is on that square
-                        p = DIRECTORY[pos]
+                        p = BOARD.pieceList[pos]
                         # print moves:
                         printmoves(p)
                         # clear the old static piece
@@ -141,13 +139,15 @@ def main():
                         y = getmpos()[1]
                         pos = 8 * y + x
                         
-                        tobemoved = False # see if it is able to move to that square
-
-                        for move in p.moves:
-                            if (pos == move): # if available move is found save coords
-                                tobemoved = True
-                                p.setPos(pos)
-                                movesavail.clear()
+                        # check if we can even move there:
+                        if p.position in BOARD.moveDict:
+                            for move in BOARD.moveDict[p.position]:
+                                if (move == pos): # if a legal move position is the same as pos
+                                    # MOVE THE PIECE
+                                    BOARD.makeMove(p, move)
+                                    # generate new moves for the new board
+                                    BOARD.generateMoves()
+                                    movesavail.clear()
                         refresh()
                         PIECECLICKED = False
             elif pygame.mouse.get_pressed()[0] & PIECECLICKED: # while holding the piece

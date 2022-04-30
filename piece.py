@@ -20,21 +20,13 @@ class Piece:
     # default constructor
     def __init__(self, color, type, position = 0):
         self.color = color
-        self.selected = False  # if piece is selected
-        self.hasmoved = False
         self.type = type
-        self.img = pygame.image.load("assets/" + color + type + ".png")
-        self.rect = self.img.get_rect()
-        self.clicked = False
-        self.moves = []
         self.position = position
+        self.img = pygame.image.load("assets/" + color + type + ".png")
     #################################################
     def setPos(self, position):  # easy navigation
         self.position = position
     #############################################3
-    # checking if a piece is selected
-    def isSelected(self):
-        return self.selected
     # printing a piece on the board, centralized on their respective squares:
     def draw(self):
         yloc, xloc = divmod(self.position, 8)
@@ -44,26 +36,9 @@ class Piece:
 # creating specific pieces that inherit from piece class
 # class pawn(piece) ---------------------------------------
 class pawn(Piece):
-    CanTakeLeft = False
-    CanTakeRight = False
     def __init__(self, color, position = 0):
         super().__init__(color, type="p")  # have to keep it like this for the defaults to work!
         self.type = "p"
-    def legalmoves(self):
-        self.moves = []
-        # if king will not be in check after piece moves
-        #   if there is no piece in way of the current piece
-        #       then move the piece
-
-        # grab the file of the piece
-        # if piece is black:
-        if self.color == "b":
-            self.moves.append(self.position - 8)
-            self.moves.append(self.position - 16)
-        else:
-            self.moves.append(self.position + 8)
-            self.moves.append(self.position + 16)
-
 # class pawn(piece) ----------------------------------------
 
 # class bishop(piece) --------------------------------------
