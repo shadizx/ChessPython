@@ -1,10 +1,6 @@
 
 # board.py
 # responsible for boad structure and operations
-# from distutils.file_util import move_file
-# from turtle import position
-# from types import NoneType
-# from numpy import take
 import pygame
 from copy import copy
 import piece
@@ -113,6 +109,12 @@ class Board:
     moveList = []
     # start with this FEN
     FEN = DEFAULTFEN
+    # tracks taken pieces to use in revertmove
+    # maps the move number to a piece that was taken on that move
+    takenPieces = {}
+    # tracks number of moves that have been played
+    moveCounter = 0
+
 
     enpassantPawnPos = -1
 
@@ -143,11 +145,11 @@ class Board:
 
     # loadpmoves
     # loads pawn moves for all pawns
-    def loadpmoves(self, piece):
-        # take piece position into pos for ease of use
-        pos = piece.position
+    def loadpmoves(self, pawn):
+        # take pawn position into pos for ease of use
+        pos = pawn.position
         # assign col to -1 or 1 to make it easier to calculate legal moves for w or b pawn
-        if piece.color == "w": 
+        if pawn.color == "w": 
             col = 1
         else: 
             col = -1
@@ -155,32 +157,21 @@ class Board:
         # first lets calculate just moving the pawn:
         # if the position in front of the pawn is empty
         if pos + 8 * col not in self.pieceList:
-            #if the position does not exist in moveDict add the position
-            # if pos not in self.moveDict:
-            #     self.moveDict[pos] = [pos + 8 * col]
-            # else:
             self.moveDict[pos].append(pos + 8 * col)
 
             # if on first move then add the extra 2 spaced move
             # if white and on 2nd rank, or black and on 7th rank
             if (pos // 8 == 1 and col == 1) or (pos // 8 == 6 and col == -1):
                 if pos + 16 * col not in self.pieceList:
-                    #if the position does not exist in moveDict add the position
-                    # if pos not in self.moveDict:
-                    #     self.moveDict[pos] = [pos + 16 * col]
-                    # else:
                     self.moveDict[pos].append(pos + 16 * col)
         #######################################################################
         # now lets calculate taking a piece
         # check if there is a pawn diagonal from the current pawn and opposite color
         for takePos in [pos + 9 * col, pos + 7 * col]:
-            if takePos in self.pieceList and self.pieceList[takePos].color != piece.color:
+            if takePos in self.pieceList and self.pieceList[takePos].color != pawn.color:
                 # need to add an extra check for pawns on the edge of the board
                 # check if file of the takePos is way different than file of pos
                 if abs((takePos % 8) - (pos % 8)) == 1:
-                    # if pos not in self.moveDict:
-                    #     self.moveDict[pos] = [takePos]
-                    # else:
                     self.moveDict[pos].append(takePos)
         #######################################################################
         # calculating en passant moves:
@@ -188,27 +179,34 @@ class Board:
         #   1) if previous move was a pawn move played to the exact right or left of a pawn
         #   2) and this happens on rank 5 (for white) and rank 4 (for black)
 
-        # initiliaze lastMovePos for ease of use
-        lastMovePos = 0
+        # check if there has been a move played
         if len(self.moveList) != 0:
-            lastMovePos = (self.moveList[-1])[1]
-        if (
-                # check if last move was a pawn move of opposite color
-                lastMovePos in self.pieceList and 
-                self.pieceList[lastMovePos].type == "p" and 
-                self.pieceList[lastMovePos].color != piece.color and
-                # check if last move is a pawn move that went 2 squares up
-                abs(self.moveList[-1][1] - self.moveList[-1][0]) == 16 and
-                # check if last move position is left or right of piece position
-                (abs(lastMovePos - pos) == 1 and abs((lastMovePos % 8) - (pos % 8)) == 1) and
-                # check if this happens on rank 5 (for white) and rank 4 (for black):
-                ((pos // 8 == 4 and piece.color == "w") or (pos // 8 == 3 and piece.color == "b"))
+            # get coordinates of the other peice's position (last position and current one)
+            otherPiecePos = (self.moveList[-1])[1]
+            otherPiecePrevPos = (self.moveList)[-1][0]
+            # get rank and file from otherPiecePos
+            otherPieceRank, otherPieceFile = piece.getRankFile(otherPiecePos)
+            otherPiecePrevRank, otherPiecePrevFile = piece.getRankFile(otherPiecePrevPos)
+            # get the current rank and file
+            currRank, currFile = piece.getRankFile(pos)
+
+            if (    
+                    # check if last move was a pawn move of opposite color
+                    (otherPiecePos in self.pieceList) and 
+                    (self.pieceList[otherPiecePos].type == "p") and 
+                    (self.pieceList[otherPiecePos].color != pawn.color) and
+                    # check if last move is a pawn move that went 2 squares up
+                    (abs(otherPiecePrevPos - otherPiecePos) == 16) and
+                    # check if on same rank and left/right file
+                    ((abs(otherPieceFile - currFile) == 1)) and
+                    (otherPieceRank == currRank) and 
+                    (abs(pos - otherPiecePos) == 1) and
+                    # check if this happens on rank 5 (for white) and rank 4 (for black):
+                    ((pos // 8 == 4 and pawn.color == "w") or (pos // 8 == 3 and pawn.color == "b"))
             ):
-                # if pos not in self.moveDict:
-                #         self.moveDict[pos] = [lastMovePos + 8 * col]
-                # else:
-                self.moveDict[pos].append(lastMovePos + 8 * col)
-                self.enpassantPawnPos = lastMovePos                    
+                self.moveDict[pos].append(otherPiecePos + 8 * col)
+                self.enpassantPawnPos = otherPiecePos
+                print("EN CHOSSANT")                
 
     # loadnmoves
     # loads knight moves for all knights
@@ -237,69 +235,61 @@ class Board:
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
-    
-    # Shadi's implementation
-    # def makeMove(self, piece, pos):
-    #     # get previous position to delete from dicts
-    #     previousPos = piece.position
-    #     # change position of piece
-    #     piece.setPos(pos)
+    def makeMove(self, origin, dest):
+        self.moveCounter += 1
+        print("on move", self.moveCounter)
 
-    #     # update board piecelist
-    #     #   delete previous key 
-    #     del self.pieceList[previousPos]
-    #     #   update with new pos and piece
-    #     self.pieceList[pos] = piece
-    #     # add our move to movelist
-    #     self.moveList.append((previousPos, pos))
-
-    #     # delete en passant'ed pawn if needed
-    #     if self.enpassantPawnPos != -1:
-    #         del self.pieceList[self.enpassantPawnPos]
-    #         print("EN CHOSSANT!")
-    #         self.enpassantPawnPos = -1
-    #     print("move list is " + str(self.moveList))
-    
-    def makeMove(self, origin, dest):    
         # grab the piece, move it to the destination
         piece = self.pieceList[origin]
+
+        # get color of piece
+        col = 1 if piece.color == "w" else -1
+
+        # if there is a piece being taken track that
+        if dest in self.pieceList:
+            self.takenPieces[self.moveCounter] = self.pieceList[dest]
+            print("TAKEN PIECE ON MOVE", self.moveCounter)
+
         if self.turn == piece.color:
+            # delete en passant'ed pawn if needed
+            # need to check if the enpassant is ACTUALLY done
+            if piece.type == "p" and ((dest - self.enpassantPawnPos) == 8 * col):
+                self.takenPieces[self.moveCounter] = self.pieceList[self.enpassantPawnPos]
+                del self.pieceList[self.enpassantPawnPos]
+                self.enpassantPawnPos = -1
+                print("EN CHOSSANT HAS BEEN TAKEN")
+
+            # move the piece to its destination
             piece.setPos(dest)
             # update the position of the piece in pieceList
             self.pieceList[dest] = self.pieceList.pop(origin)  # YES, this also deletes the piece in origin
             # add the move to moveList
             self.moveList.append((origin, dest))
 
-            # delete en passant'ed pawn if needed
-            if self.enpassantPawnPos != -1:
-                del self.pieceList[self.enpassantPawnPos]
-                print("EN CHOSSANT!")
-                self.enpassantPawnPos = -1
-            print("move list is " + str(self.moveList))
-
-            # update the rest of the board
+            # check how many moves since last pawn move
             if piece.type != 'p':
                 self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
             else:
                 self.MovesSinceLastPawn = 0
             self.turn = 'w' if self.turn == 'b' else 'b'
+
+            print("move list is " + str(self.moveList))
             # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)
 
     def revertMove(self):
-        if len(self.moveList) != 0:
-            dest, origin = (self.moveList.pop(-1))  # removes and returns the last element
-            # grab the piece, move it to the destination
-            piece = self.pieceList[origin]
-            piece.selfpos(dest)
-            # update the position of the piece in pieceList
-            self.pieceList[dest] = self.pieceList.pop(origin)
+        if self.moveCounter != 0:
+            previousOrigin, previousDest = (self.moveList.pop(-1))  # removes and returns the last element
+            # grab the piece, move it back to the origin
+            # revert the piece that just moved
+            self.pieceList[previousOrigin] = self.pieceList.pop(previousDest)
+            self.pieceList[previousOrigin].setPos(previousOrigin)
+            # see if there was a piece taken on previous dest
+            if self.moveCounter in self.takenPieces:
+                takenPiece = self.takenPieces.pop(self.moveCounter)
+                self.pieceList[takenPiece.position] = takenPiece
+            self.moveCounter -= 1
             self.turn = 'w' if self.turn == 'b' else 'b'
             # TODO: find a way to revert changes to castle and enpassant square and moves since last pawn
-
-
-
-        
-    
     # draw
     # draws board squares
     def draw(self):

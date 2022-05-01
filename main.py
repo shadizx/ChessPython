@@ -65,7 +65,6 @@ def printmoves(p):
         for move in BOARD.moveDict[p.position]:
             #load the legal moves on the board
             y, x = piece.getRankFile(move)
-            # print(f'{x = }, {y = }')
             circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)  # TODO: check this
             movesavail.append(circleimg)
 ###################################################################
@@ -141,10 +140,10 @@ def main():
                         pos = 8 * y + x
                         
                         # check if we can even move there:
-                        if p.position in BOARD.moveDict:
+                        if p.position in BOARD.moveDict and p.color == BOARD.turn:
                             for move in BOARD.moveDict[p.position]:
                                 if (move == pos): # if a legal move position is the same as pos
-                                    # MOVE THE PIECE
+                                       # MOVE THE PIECE
                                     BOARD.makeMove(p.position, move)
                                     # generate new moves for the new board
                                     BOARD.generateMoves()
@@ -167,6 +166,14 @@ def main():
                 else:
                     # move piece to mouse
                     piece2mouse(xloc, yloc, p)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    BOARD.revertMove()
+                    BOARD.generateMoves()
+                    movesavail.clear()
+                    refresh()
+
+
 #################################while loop####################################################
         
     pygame.quit()

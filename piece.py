@@ -1,8 +1,6 @@
 # piece.py
 # responsible for functionality of the pieces
 import pygame
-
-
 ###################### constants ############################
 width = height = 640                           # constant width and height, set for basic testing
 win = pygame.display.set_mode((width, height)) # setting window width and height
