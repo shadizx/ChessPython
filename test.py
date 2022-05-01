@@ -1,10 +1,5 @@
 import os
 
+list2 = [(1,4), (2,5), (3,6)]
 
-d = {}
-if 0 not in d:
-    d[0] = [1]
-d[0].append(2)
-
-for i in d:
-    print( i, d[i])
+print(str(list2[-1]) + " " + str(list2[-1][1]))

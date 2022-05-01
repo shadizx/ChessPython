@@ -1,6 +1,7 @@
 # board.py
 # responsible for boad structure and operations
 from distutils.file_util import move_file
+from turtle import position
 from types import NoneType
 from numpy import take
 import pygame
@@ -104,8 +105,12 @@ class Board:
     boardColors = []
     # dict that maps a position to the legal moves of the piece on that position
     moveDict = {}
+    # list of moves that has happened so far:
+    moveList = []
     # start with this FEN
     FEN = DEFAULTFEN
+
+    enpassantPawnPos = -1
 
     def __init__(self):
         self.pieceList = fen(self.FEN).LoadFromFEN()
@@ -130,6 +135,8 @@ class Board:
                 self.loadqmoves(piece)
             elif piece.type == "k":
                 self.loadkmoves(piece)
+
+
     # loadpmoves
     # loads pawn moves for all pawns
     def loadpmoves(self, piece):
@@ -153,7 +160,6 @@ class Board:
             # if on first move then add the extra 2 spaced move
             # if white and on 2nd rank, or black and on 7th rank
             if (pos // 8 == 1 and col == 1) or (pos // 8 == 6 and col == -1):
-                print("color " + piece.color)
                 if pos + 16 * col not in self.pieceList:
                     #if the position does not exist in moveDict add the position
                     if pos not in self.moveDict:
@@ -172,6 +178,33 @@ class Board:
                         self.moveDict[pos] = [takePos]
                     else:
                         self.moveDict[pos].append(takePos)
+        #######################################################################
+        # calculating en passant moves:
+        # parameters for an en passant move is:
+        #   1) if previous move was a pawn move played to the exact right or left of a pawn
+        #   2) and this happens on rank 5 (for white) and rank 4 (for black)
+
+        # initiliaze lastMovePos for ease of use
+        lastMovePos = 0
+        if len(self.moveList) != 0:
+            lastMovePos = (self.moveList[-1])[1]
+        if (
+                # check if last move was a pawn move of opposite color
+                lastMovePos in self.pieceList and 
+                self.pieceList[lastMovePos].type == "p" and 
+                self.pieceList[lastMovePos].color != piece.color and
+                # check if last move is a pawn move that went 2 squares up
+                abs(self.moveList[-1][1] - self.moveList[-1][0]) == 16 and
+                # check if last move position is left or right of piece position
+                (abs(lastMovePos - pos) == 1 and abs((lastMovePos % 8) - (pos % 8)) == 1) and
+                # check if this happens on rank 5 (for white) and rank 4 (for black):
+                ((pos // 8 == 4 and piece.color == "w") or (pos // 8 == 3 and piece.color == "b"))
+            ):
+                if pos not in self.moveDict:
+                        self.moveDict[pos] = [lastMovePos + 8 * col]
+                else:
+                    self.moveDict[pos].append(lastMovePos + 8 * col)
+                self.enpassantPawnPos = lastMovePos                    
 
     # loadnmoves
     # loads knight moves for all knights
@@ -211,6 +244,15 @@ class Board:
         del self.pieceList[previousPos]
         #   update with new pos and piece
         self.pieceList[pos] = piece
+        # add our move to movelist
+        self.moveList.append((previousPos, pos))
+
+        # delete en passant'ed pawn if needed
+        if self.enpassantPawnPos != -1:
+            del self.pieceList[self.enpassantPawnPos]
+            print("EN CHOSSANT!")
+            self.enpassantPawnPos = -1
+        print("move list is " + str(self.moveList))
     
     # draw
     # draws board squares
