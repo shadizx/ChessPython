@@ -118,15 +118,16 @@ def main():
                         PIECECLICKED = True
                         # grab the piece that is on that square
                         p = BOARD.pieceList[pos]
-                        # print moves:
-                        printmoves(p)
-                        # clear the old static piece
-                        piecedisappear(p)
-                        # get mouse position
-                        xloc = event.pos[0]
-                        yloc = event.pos[1]
-                        # need to check if mouse is going out of the window, then let go of piece
-                        piece2mouse(xloc, yloc, p)
+                        if p.color == BOARD.turn:
+                            # print moves:
+                            printmoves(p)
+                            # clear the old static piece
+                            piecedisappear(p)
+                            # get mouse position
+                            xloc = event.pos[0]
+                            yloc = event.pos[1]
+                            # need to check if mouse is going out of the window, then let go of piece
+                            piece2mouse(xloc, yloc, p)
                     else:
                         # if clicked on board, remove available moves and refresh board
                         movesavail.clear()
@@ -144,7 +145,7 @@ def main():
                             for move in BOARD.moveDict[p.position]:
                                 if (move == pos): # if a legal move position is the same as pos
                                     # MOVE THE PIECE
-                                    BOARD.makeMove(p, move)
+                                    BOARD.makeMove(p.position, move)
                                     # generate new moves for the new board
                                     BOARD.generateMoves()
                                     movesavail.clear()

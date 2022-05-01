@@ -1,13 +1,15 @@
+
 # board.py
 # responsible for boad structure and operations
-from distutils.file_util import move_file
-from turtle import position
-from types import NoneType
-from numpy import take
+# from distutils.file_util import move_file
+# from turtle import position
+# from types import NoneType
+# from numpy import take
 import pygame
 from copy import copy
 import piece
 from dataclasses import dataclass
+from collections import defaultdict
 
 ###################### constants ############################
 width = height = 640                           # constant width and height, set for basic testing
@@ -43,6 +45,7 @@ class fen():
     # LoadfromFEN
     # load the board from a FEN
     def LoadFromFEN(self):
+        self.EnPassantSquare = -1
         splitfen = self.FEN.split(' ')
         file = 0
         rank = 7
@@ -67,11 +70,12 @@ class fen():
                 self.CastlingsAllowed.append(self.castling_dict[s])
         if splitfen[3] != '-':  # Translate en passant square to a square on the board, if available
             s = splitfen[3]
-            self.EnPassantSquare = self.SquareDict[(s[0], s[1])]
+            self.EnPassantSquare = 0
+            # self.EnPassantSquare = self.SquareDict[(s[0], s[1])]  # TODO: fix this!
         self.MovesSinceLastPawn = int(splitfen[4])  # determine moves since last pawn move (for 50-move rule)
         self.MoveNumber = int(splitfen[5])  # determine move number
 
-        return self.pieces
+        return (self.pieces, self.Turn, self.CastlingsAllowed, self.EnPassantSquare, self.MovesSinceLastPawn, self.MoveNumber)
 
 # class fen
 ###################################################################
@@ -104,7 +108,7 @@ class Board:
     # holds boardcolors
     boardColors = []
     # dict that maps a position to the legal moves of the piece on that position
-    moveDict = {}
+    moveDict = defaultdict(lambda: [])
     # list of moves that has happened so far:
     moveList = []
     # start with this FEN
@@ -113,7 +117,7 @@ class Board:
     enpassantPawnPos = -1
 
     def __init__(self):
-        self.pieceList = fen(self.FEN).LoadFromFEN()
+        self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber = fen(self.FEN).LoadFromFEN()
         self.generateMoves()
 
 
@@ -152,20 +156,20 @@ class Board:
         # if the position in front of the pawn is empty
         if pos + 8 * col not in self.pieceList:
             #if the position does not exist in moveDict add the position
-            if pos not in self.moveDict:
-                self.moveDict[pos] = [pos + 8 * col]
-            else:
-                self.moveDict[pos].append(pos + 8 * col)
+            # if pos not in self.moveDict:
+            #     self.moveDict[pos] = [pos + 8 * col]
+            # else:
+            self.moveDict[pos].append(pos + 8 * col)
 
             # if on first move then add the extra 2 spaced move
             # if white and on 2nd rank, or black and on 7th rank
             if (pos // 8 == 1 and col == 1) or (pos // 8 == 6 and col == -1):
                 if pos + 16 * col not in self.pieceList:
                     #if the position does not exist in moveDict add the position
-                    if pos not in self.moveDict:
-                        self.moveDict[pos] = [pos + 16 * col]
-                    else:
-                        self.moveDict[pos].append(pos + 16 * col)
+                    # if pos not in self.moveDict:
+                    #     self.moveDict[pos] = [pos + 16 * col]
+                    # else:
+                    self.moveDict[pos].append(pos + 16 * col)
         #######################################################################
         # now lets calculate taking a piece
         # check if there is a pawn diagonal from the current pawn and opposite color
@@ -174,10 +178,10 @@ class Board:
                 # need to add an extra check for pawns on the edge of the board
                 # check if file of the takePos is way different than file of pos
                 if abs((takePos % 8) - (pos % 8)) == 1:
-                    if pos not in self.moveDict:
-                        self.moveDict[pos] = [takePos]
-                    else:
-                        self.moveDict[pos].append(takePos)
+                    # if pos not in self.moveDict:
+                    #     self.moveDict[pos] = [takePos]
+                    # else:
+                    self.moveDict[pos].append(takePos)
         #######################################################################
         # calculating en passant moves:
         # parameters for an en passant move is:
@@ -200,10 +204,10 @@ class Board:
                 # check if this happens on rank 5 (for white) and rank 4 (for black):
                 ((pos // 8 == 4 and piece.color == "w") or (pos // 8 == 3 and piece.color == "b"))
             ):
-                if pos not in self.moveDict:
-                        self.moveDict[pos] = [lastMovePos + 8 * col]
-                else:
-                    self.moveDict[pos].append(lastMovePos + 8 * col)
+                # if pos not in self.moveDict:
+                #         self.moveDict[pos] = [lastMovePos + 8 * col]
+                # else:
+                self.moveDict[pos].append(lastMovePos + 8 * col)
                 self.enpassantPawnPos = lastMovePos                    
 
     # loadnmoves
@@ -233,26 +237,68 @@ class Board:
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
-    def makeMove(self, piece, pos):
-        # get previous position to delete from dicts
-        previousPos = piece.position
-        # change position of piece
-        piece.setPos(pos)
+    
+    # Shadi's implementation
+    # def makeMove(self, piece, pos):
+    #     # get previous position to delete from dicts
+    #     previousPos = piece.position
+    #     # change position of piece
+    #     piece.setPos(pos)
 
-        # update board piecelist
-        #   delete previous key 
-        del self.pieceList[previousPos]
-        #   update with new pos and piece
-        self.pieceList[pos] = piece
-        # add our move to movelist
-        self.moveList.append((previousPos, pos))
+    #     # update board piecelist
+    #     #   delete previous key 
+    #     del self.pieceList[previousPos]
+    #     #   update with new pos and piece
+    #     self.pieceList[pos] = piece
+    #     # add our move to movelist
+    #     self.moveList.append((previousPos, pos))
 
-        # delete en passant'ed pawn if needed
-        if self.enpassantPawnPos != -1:
-            del self.pieceList[self.enpassantPawnPos]
-            print("EN CHOSSANT!")
-            self.enpassantPawnPos = -1
-        print("move list is " + str(self.moveList))
+    #     # delete en passant'ed pawn if needed
+    #     if self.enpassantPawnPos != -1:
+    #         del self.pieceList[self.enpassantPawnPos]
+    #         print("EN CHOSSANT!")
+    #         self.enpassantPawnPos = -1
+    #     print("move list is " + str(self.moveList))
+    
+    def makeMove(self, origin, dest):    
+        # grab the piece, move it to the destination
+        piece = self.pieceList[origin]
+        if self.turn == piece.color:
+            piece.setPos(dest)
+            # update the position of the piece in pieceList
+            self.pieceList[dest] = self.pieceList.pop(origin)  # YES, this also deletes the piece in origin
+            # add the move to moveList
+            self.moveList.append((origin, dest))
+
+            # delete en passant'ed pawn if needed
+            if self.enpassantPawnPos != -1:
+                del self.pieceList[self.enpassantPawnPos]
+                print("EN CHOSSANT!")
+                self.enpassantPawnPos = -1
+            print("move list is " + str(self.moveList))
+
+            # update the rest of the board
+            if piece.type != 'p':
+                self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
+            else:
+                self.MovesSinceLastPawn = 0
+            self.turn = 'w' if self.turn == 'b' else 'b'
+            # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)
+
+    def revertMove(self):
+        if len(self.moveList) != 0:
+            dest, origin = (self.moveList.pop(-1))  # removes and returns the last element
+            # grab the piece, move it to the destination
+            piece = self.pieceList[origin]
+            piece.selfpos(dest)
+            # update the position of the piece in pieceList
+            self.pieceList[dest] = self.pieceList.pop(origin)
+            self.turn = 'w' if self.turn == 'b' else 'b'
+            # TODO: find a way to revert changes to castle and enpassant square and moves since last pawn
+
+
+
+        
     
     # draw
     # draws board squares
