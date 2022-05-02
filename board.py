@@ -1,4 +1,3 @@
-
 # board.py
 # responsible for boad structure and operations
 import pygame
@@ -20,7 +19,6 @@ DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ##############################################################
 # class fen
 # store default values used for board translation
-
 @dataclass# returns piecelist array
 class fen():
     # public values to be accessed later on
@@ -114,14 +112,14 @@ class Board:
     takenPieces = {}
     # tracks number of moves that have been played
     moveCounter = 0
-
+    # tracks unmade moves to then go forward with arrow key
+    unmadeMoves = []
 
     enpassantPawnPos = -1
 
     def __init__(self):
         self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber = fen(self.FEN).LoadFromFEN()
         self.generateMoves()
-
 
     # generateMoves
     # useful for generating the moves of board
@@ -141,7 +139,6 @@ class Board:
                 self.loadqmoves(piece)
             elif piece.type == "k":
                 self.loadkmoves(piece)
-
 
     # loadpmoves
     # loads pawn moves for all pawns
@@ -288,7 +285,10 @@ class Board:
                 takenPiece = self.takenPieces.pop(self.moveCounter)
                 self.pieceList[takenPiece.position] = takenPiece
             self.moveCounter -= 1
+            # switch colors
             self.turn = 'w' if self.turn == 'b' else 'b'
+            # add reverted moves to unmadeMoves:
+            self.unmadeMoves.append((previousOrigin, previousDest))
             # TODO: find a way to revert changes to castle and enpassant square and moves since last pawn
     # draw
     # draws board squares

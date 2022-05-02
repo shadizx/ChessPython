@@ -143,7 +143,7 @@ def main():
                         if p.position in BOARD.moveDict and p.color == BOARD.turn:
                             for move in BOARD.moveDict[p.position]:
                                 if (move == pos): # if a legal move position is the same as pos
-                                       # MOVE THE PIECE
+                                    # MOVE THE PIECE
                                     BOARD.makeMove(p.position, move)
                                     # generate new moves for the new board
                                     BOARD.generateMoves()
@@ -172,7 +172,13 @@ def main():
                     BOARD.generateMoves()
                     movesavail.clear()
                     refresh()
-
+                elif event.key == pygame.K_RIGHT:
+                    if (len(BOARD.unmadeMoves) > 0):
+                            BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1])
+                            BOARD.unmadeMoves.pop()
+                            BOARD.generateMoves()
+                            movesavail.clear()
+                            refresh()
 
 #################################while loop####################################################
         
