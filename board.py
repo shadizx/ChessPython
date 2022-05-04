@@ -1,5 +1,6 @@
 # board.py
 # responsible for boad structure and operations
+from shutil import move
 import pygame
 from copy import copy
 import piece
@@ -119,48 +120,88 @@ class Board:
 
     def __init__(self):
         self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber = fen(self.FEN).LoadFromFEN()
-        self.generateMoves()
+        self.generateMoves(self.turn)
 
     # generateMoves
     # useful for generating the moves of board
-    def generateMoves(self):
+    def generateMoves(self, turn):
         # clear the moveDict
-        self.moveDict.clear()
+        moveDict = {}
         for piece in self.pieceList.values():
-            if piece.type == 'p':
-                self.loadpmoves(piece)
-            elif piece.type == "r":
-                self.loadrmoves(piece)
-            elif piece.type == "n":
-                self.loadnmoves(piece)
-            elif piece.type == "b":
-                self.loadbmoves(piece)
-            elif piece.type == "q":
-                self.loadqmoves(piece)
-            elif piece.type == "k":
-                self.loadkmoves(piece)
+            if piece.color == turn:
+                if piece.type == 'p':
+                    moves = self.loadpmoves(piece)
+                elif piece.type == "r":
+                    moves = self.loadrmoves(piece)
+                elif piece.type == "n":
+                    moves = self.loadnmoves(piece)
+                elif piece.type == "b":
+                    moves = self.loadbmoves(piece)
+                elif piece.type == "q":
+                    moves = self.loadqmoves(piece)
+                elif piece.type == "k":
+                    moves = self.loadkmoves(piece)
+                if len(moves) != 0:
+                    moveDict[piece.position] = moves
+        return moveDict
+    # function for check in regular and castling mode
+    def squareIsThreatened(self, pos, turn=None):
+        if turn is None:  # if turn argument not given; sometimes we need to enter manually
+            turn = 'w' if self.turn == 'b' else 'b'
+        opponentMoves = self.generateMoves(turn)
+        for l in opponentMoves:
+            for m in opponentMoves[l]:
+                if m == pos:
+                    return True
+        return False
+    def generateLegalMoves(self, turn):
+        allMoves = self.generateMoves(turn)
+        # print(allMoves)
+        legalMoves = {}
+        for l in allMoves: # origin
+            moves = []
+            for m in allMoves[l]: # destination
+                self.makeMove(l, m)
+                # print(f"testing move {l} to {m}")
+                # now find position of king; turn has changed so need to find "opposite color" king
+                for pos in self.pieceList:
+                    if self.pieceList[pos].type == 'k' and self.pieceList[pos].color != self.turn:
+                        kingpos = pos
+                if not self.squareIsThreatened(kingpos, self.turn):
+                    moves.append(m)
+                self.revertMove()
+                # print(f"reverted move {l} to {m}")
+            if len(moves) != 0:
+                legalMoves[l] = moves
+        # print(legalMoves)
+        return legalMoves
+
+        
 
     # loadpmoves
     # loads pawn moves for all pawns
     def loadpmoves(self, pawn):
+        moves = []
         # take pawn position into pos for ease of use
         pos = pawn.position
         # assign col to -1 or 1 to make it easier to calculate legal moves for w or b pawn
-        if pawn.color == "w": 
-            col = 1
-        else: 
-            col = -1
+        col = 1 if pawn.color == 'w' else -1
+        # if pawn.color == "w": 
+        #     col = 1
+        # else: 
+        #     col = -1
+        
         #######################################################################
         # first lets calculate just moving the pawn:
         # if the position in front of the pawn is empty
         if pos + 8 * col not in self.pieceList:
-            self.moveDict[pos].append(pos + 8 * col)
+            moves.append(pos + 8 * col)
 
             # if on first move then add the extra 2 spaced move
             # if white and on 2nd rank, or black and on 7th rank
             if (pos // 8 == 1 and col == 1) or (pos // 8 == 6 and col == -1):
                 if pos + 16 * col not in self.pieceList:
-                    self.moveDict[pos].append(pos + 16 * col)
+                    moves.append(pos + 16 * col)
         #######################################################################
         # now lets calculate taking a piece
         # check if there is a pawn diagonal from the current pawn and opposite color
@@ -169,7 +210,7 @@ class Board:
                 # need to add an extra check for pawns on the edge of the board
                 # check if file of the takePos is way different than file of pos
                 if abs((takePos % 8) - (pos % 8)) == 1:
-                    self.moveDict[pos].append(takePos)
+                    moves.append(takePos)
         #######################################################################
         # calculating en passant moves:
         # parameters for an en passant move is:
@@ -201,40 +242,121 @@ class Board:
                     # check if this happens on rank 5 (for white) and rank 4 (for black):
                     ((pos // 8 == 4 and pawn.color == "w") or (pos // 8 == 3 and pawn.color == "b"))
             ):
-                self.moveDict[pos].append(otherPiecePos + 8 * col)
+                moves.append(otherPiecePos + 8 * col)
                 self.enpassantPawnPos = otherPiecePos
-                print("EN CHOSSANT")                
-
+                print("EN CHOSSANT")           
+        return moves     
+    DirectionOffsets = ((0,1), (0,-1), (-1,0), (1,0), (-1,1), (1,-1), (1,1), (-1,-1))
     # loadnmoves
     # loads knight moves for all knights
-    def loadnmoves(self, piece):
-        pass
+    def loadnmoves(self, knight):
+        moves = []
+        DirectionOffsets = ((1,2), (2,1), (2,-1), (1,-2), (-1,-2), (-2,-1), (-2,1), (-1,2))
+        rank, file = piece.getRankFile(knight.position)
+        # get direction indices specific to bishop
+        startDirIndex, endDirIndex = 0, 8
+        for rankDir, fileDir in DirectionOffsets[startDirIndex:endDirIndex]:
+            # check if destination is occupied
+            destrank, destfile = rank+rankDir, file+fileDir
+            if 0<=destrank<8 and 0<=destfile<8:
+                dest = piece.getPos(destrank, destfile)
+                if dest in self.pieceList:
+                    if self.pieceList[dest].color != knight.color:
+                        moves.append(dest)
+                # if unoccupied:
+                else:
+                    moves.append(dest)
+        return moves
 
     # loadrmoves
     # loads rook moves for all rooks
-    def loadrmoves(self, piece):
-        pass
+    def loadrmoves(self, rook):
+        moves = []
+        rank, file = piece.getRankFile(rook.position)
+        # get direction indices specific to bishop
+        startDirIndex, endDirIndex = 0, 4
+        for rankDir, fileDir in self.DirectionOffsets[startDirIndex:endDirIndex]:
+            for movenum in range(1, 8):
+                # check if destination is occupied
+                destrank, destfile = rank+movenum*rankDir, file+movenum*fileDir
+                if 0<=destrank<8 and 0<=destfile<8:
+                    dest = piece.getPos(destrank, destfile)
+                    if dest in self.pieceList:
+                        if self.pieceList[dest].color != rook.color:
+                            moves.append(dest)
+                        break
+                    # if unoccupied:
+                    moves.append(dest)
+        return moves
 
     # loadbmoves
     # loads bishop moves for all bishops
-    def loadbmoves(self, piece):
-        pass
+    def loadbmoves(self, bishop):
+        moves = []
+        rank, file = piece.getRankFile(bishop.position)
+        # get direction indices specific to bishop
+        startDirIndex, endDirIndex = 4, 8
+        for rankDir, fileDir in self.DirectionOffsets[startDirIndex:endDirIndex]:
+            for movenum in range(1, 8):
+                # check if destination is occupied
+                destrank, destfile = rank+movenum*rankDir, file+movenum*fileDir
+                if 0<=destrank<8 and 0<=destfile<8:
+                    dest = piece.getPos(destrank, destfile)
+                    if dest in self.pieceList:
+                        if self.pieceList[dest].color != bishop.color:
+                            moves.append(dest)
+                        break
+                    # if unoccupied:
+                    moves.append(dest)
+        return moves
 
     # loadqmoves
     # loads queen moves for all queens
-    def loadqmoves(self, piece):
-        pass
+    def loadqmoves(self, queen):
+        moves = []
+        rank, file = piece.getRankFile(queen.position)
+        # get direction indices specific to bishop
+        startDirIndex, endDirIndex = 0, 8
+        for rankDir, fileDir in self.DirectionOffsets[startDirIndex:endDirIndex]:
+            for movenum in range(1, 8):
+                # check if destination is occupied
+                destrank, destfile = rank+movenum*rankDir, file+movenum*fileDir
+                if 0<=destrank<8 and 0<=destfile<8:
+                    dest = piece.getPos(destrank, destfile)
+                    if dest in self.pieceList:
+                        if self.pieceList[dest].color != queen.color:
+                            moves.append(dest)
+                        break
+                    # if unoccupied:
+                    moves.append(dest)
+        return moves
 
     # loadkmoves
     # loads king moves for all kings
-    def loadkmoves(self, piece):
-        pass
+    def loadkmoves(self, king):
+        moves = []
+        rank, file = piece.getRankFile(king.position)
+        # get direction indices specific to bishop
+        startDirIndex, endDirIndex = 0, 8
+        for rankDir, fileDir in self.DirectionOffsets[startDirIndex:endDirIndex]:
+            # check if destination is occupied
+            destrank, destfile = rank+rankDir, file+fileDir
+            if 0<=destrank<8 and 0<=destfile<8:
+                dest = piece.getPos(destrank, destfile)
+                if dest in self.pieceList:
+                    if self.pieceList[dest].color != king.color:
+                        moves.append(dest)
+                else: # if unoccupied:
+                    moves.append(dest)
+            # TODO: add castle
+        return moves
+        
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
     def makeMove(self, origin, dest):
         self.moveCounter += 1
-        print("on move", self.moveCounter)
+        # print("on move", self.moveCounter)
 
         # grab the piece, move it to the destination
         piece = self.pieceList[origin]
@@ -246,6 +368,7 @@ class Board:
         if dest in self.pieceList:
             self.takenPieces[self.moveCounter] = self.pieceList[dest]
             print("TAKEN PIECE ON MOVE", self.moveCounter)
+            print(self.takenPieces)
 
         if self.turn == piece.color:
             # delete en passant'ed pawn if needed
@@ -270,7 +393,7 @@ class Board:
                 self.MovesSinceLastPawn = 0
             self.turn = 'w' if self.turn == 'b' else 'b'
 
-            print("move list is " + str(self.moveList))
+            # print("move list is " + str(self.moveList))
             # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)
 
     def revertMove(self):
@@ -280,6 +403,10 @@ class Board:
             # revert the piece that just moved
             self.pieceList[previousOrigin] = self.pieceList.pop(previousDest)
             self.pieceList[previousOrigin].setPos(previousOrigin)
+            # return taken pieces (if any) back to their position
+            if self.moveCounter in self.takenPieces:
+                piece = self.takenPieces[self.moveCounter]
+                self.pieceList[piece.position] = piece
             # see if there was a piece taken on previous dest
             if self.moveCounter in self.takenPieces:
                 takenPiece = self.takenPieces.pop(self.moveCounter)
