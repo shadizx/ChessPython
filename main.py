@@ -19,7 +19,8 @@ circlex = 40
 circley = -40
 circler = 20
 # available legal moves
-movesavail = []
+movesavail = [] # why did we need this again?
+turn_dict = {'w': (0, "white", "black"), 'b': (1, "black", "white")} # (bin, self, opponent) cosmetic, won't really need this later
 ##############################################################
 # piece BOARD
 # start of with BOARD of starting pieces
@@ -155,7 +156,12 @@ def main():
                                         if BOARD.pieceList[pos].type == 'k' and BOARD.pieceList[pos].color == BOARD.turn:
                                             kingpos = pos
                                     if BOARD.squareIsThreatened(kingpos):
-                                        print("check!")
+                                        if len(legalMoves) == 0:
+                                            print(f"checkmate! {turn_dict[BOARD.turn][2]} wins!")
+                                        else:
+                                            print("check!")
+                                    elif len(legalMoves) == 0:
+                                        print("stalemate!")
                         refresh()
                         PIECECLICKED = False
             elif pygame.mouse.get_pressed()[0] & PIECECLICKED: # while holding the piece

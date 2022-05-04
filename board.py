@@ -33,7 +33,7 @@ class fen():
     castling_dict = {'k': "black_kingside", 'K': "white_kingside", 'q': "black_queenside", 'Q': "white_queenside"}  # TODO: edit this!
     # StartFEN = DEFAULTFEN
     CastlingsAllowed = []  # resets castles so we can assign them again here
-    turn_dict = {'w': 0, 'b': 1}  # TODO: edit this as required!
+    turn_dict = {'w': (0, "white"), 'b': (1, "black")}  # TODO: edit this as required!
 
     # assigning pieceList array
     pieces = {}
