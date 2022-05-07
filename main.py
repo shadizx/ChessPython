@@ -168,6 +168,7 @@ def main():
                     # move piece to mouse
                     piece2mouse(xloc, yloc, p)
             if event.type == pygame.KEYDOWN:
+                print("taken pieces is " + str(BOARD.takenPieces))
                 if event.key == pygame.K_LEFT:
                     BOARD.revertMove()
                     BOARD.generateMoves()

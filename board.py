@@ -247,31 +247,33 @@ class Board:
             self.takenPieces[self.moveCounter] = self.pieceList[dest]
             print("TAKEN PIECE ON MOVE", self.moveCounter)
 
-        if self.turn == piece.color:
-            # delete en passant'ed pawn if needed
-            # need to check if the enpassant is ACTUALLY done
-            if piece.type == "p" and ((dest - self.enpassantPawnPos) == 8 * col):
-                self.takenPieces[self.moveCounter] = self.pieceList[self.enpassantPawnPos]
-                del self.pieceList[self.enpassantPawnPos]
-                self.enpassantPawnPos = -1
-                print("EN CHOSSANT HAS BEEN TAKEN")
+        # delete en passant'ed pawn if needed
+        # need to check if the enpassant is ACTUALLY done
+        if (piece.type == "p" and 
+            self.enpassantPawnPos != -1 and
+            (dest - self.enpassantPawnPos) == 8 * col
+            ):
+            self.takenPieces[self.moveCounter] = self.pieceList[self.enpassantPawnPos]
+            del self.pieceList[self.enpassantPawnPos]
+            self.enpassantPawnPos = -1
+            print("EN CHOSSANT HAS BEEN TAKEN")
 
-            # move the piece to its destination
-            piece.setPos(dest)
-            # update the position of the piece in pieceList
-            self.pieceList[dest] = self.pieceList.pop(origin)  # YES, this also deletes the piece in origin
-            # add the move to moveList
-            self.moveList.append((origin, dest))
+        # move the piece to its destination
+        piece.setPos(dest)
+        # update the position of the piece in pieceList
+        self.pieceList[dest] = self.pieceList.pop(origin)  # YES, this also deletes the piece in origin
+        # add the move to moveList
+        self.moveList.append((origin, dest))
 
-            # check how many moves since last pawn move
-            if piece.type != 'p':
-                self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
-            else:
-                self.MovesSinceLastPawn = 0
-            self.turn = 'w' if self.turn == 'b' else 'b'
+        # check how many moves since last pawn move
+        if piece.type != 'p':
+            self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
+        else:
+            self.MovesSinceLastPawn = 0
+        self.turn = 'w' if self.turn == 'b' else 'b'
 
-            print("move list is " + str(self.moveList))
-            # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)
+        print("move list is " + str(self.moveList))
+        # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)
 
     def revertMove(self):
         if self.moveCounter != 0:
