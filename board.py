@@ -183,7 +183,7 @@ class Board:
             otherPiecePrevPos = (self.moveList)[-1][0]
             # get rank and file from otherPiecePos
             otherPieceRank, otherPieceFile = piece.getRankFile(otherPiecePos)
-            otherPiecePrevRank, otherPiecePrevFile = piece.getRankFile(otherPiecePrevPos)
+            # otherPiecePrevRank, otherPiecePrevFile = piece.getRankFile(otherPiecePrevPos)
             # get the current rank and file
             currRank, currFile = piece.getRankFile(pos)
 
@@ -197,9 +197,9 @@ class Board:
                     # check if on same rank and left/right file
                     ((abs(otherPieceFile - currFile) == 1)) and
                     (otherPieceRank == currRank) and 
-                    (abs(pos - otherPiecePos) == 1) and
+                    (abs(pos - otherPiecePos) == 1)
                     # check if this happens on rank 5 (for white) and rank 4 (for black):
-                    ((pos // 8 == 4 and pawn.color == "w") or (pos // 8 == 3 and pawn.color == "b"))
+                    # ((pos // 8 == 4 and pawn.color == "w") or (pos // 8 == 3 and pawn.color == "b"))
             ):
                 self.moveDict[pos].append(otherPiecePos + 8 * col)
                 self.enpassantPawnPos = otherPiecePos
