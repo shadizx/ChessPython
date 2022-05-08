@@ -13,7 +13,7 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
-DEFAULTFEN = "///3B//// w KQkq - 0 1"
+DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ###################### global variables ############################
 
 ##############################################################
@@ -119,26 +119,27 @@ class Board:
 
     def __init__(self):
         self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber = fen(self.FEN).LoadFromFEN()
-        self.generateMoves()
+        self.generateMoves(self.turn)
 
     # generateMoves
     # useful for generating the moves of board
-    def generateMoves(self):
+    def generateMoves(self, turn):
         # clear the moveDict
         self.moveDict.clear()
         for piece in self.pieceList.values():
-            if piece.type == 'p':
-                self.loadpmoves(piece)
-            elif piece.type == "r":
-                self.loadrmoves(piece)
-            elif piece.type == "n":
-                self.loadnmoves(piece)
-            elif piece.type == "b":
-                self.loadbmoves(piece)
-            elif piece.type == "q":
-                self.loadqmoves(piece)
-            elif piece.type == "k":
-                self.loadkmoves(piece)
+            if piece.color == turn:
+                if piece.type == 'p':
+                    self.loadpmoves(piece)
+                elif piece.type == "r":
+                    self.loadrmoves(piece)
+                elif piece.type == "n":
+                    self.loadnmoves(piece)
+                elif piece.type == "b":
+                    self.loadbmoves(piece)
+                elif piece.type == "q":
+                    self.loadqmoves(piece)
+                elif piece.type == "k":
+                    self.loadkmoves(piece)
 
     # loadpmoves
     # loads pawn moves for all pawns
@@ -216,7 +217,7 @@ class Board:
             # take file of opp knight to compare below
             file = takepos % 8
             # difference of files must be 1 or 2 to be a valid knight move
-            if (abs(fileOrigin - file) in [1,2]):
+            if (abs(fileOrigin - file) in [1,2] and takepos >= 0):
                 # check if piece exists there with a different color
                 if (takepos in self.pieceList):
                     if (self.pieceList[takepos].color != knight.color):
@@ -358,12 +359,23 @@ class Board:
     # loadqmoves
     # loads queen moves for all queens
     def loadqmoves(self, piece):
-        pass
+        # queen moves is a combination of rook and bishop moves:
+        self.loadrmoves(piece)
+        self.loadbmoves(piece)
 
     # loadkmoves
     # loads king moves for all kings
     def loadkmoves(self, piece):
-        pass
+        pos = piece.position
+        #check squares around king
+        for takepos in [pos + 8, pos - 8, pos + 9, pos - 9, pos + 1, pos - 1, pos + 7, pos -7]:
+            # check if takepos is in the right constraints
+            # check if takepos file is different by pos rank by only 1
+            if ((0 <= takepos <= 63) and (abs(pos % 8 - takepos % 8) <= 1)):
+                if takepos not in self.pieceList:
+                    self.moveDict[pos].append(takepos)
+                elif self.pieceList[takepos].color != piece.color:
+                    self.moveDict[pos].append(takepos)
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
@@ -405,7 +417,7 @@ class Board:
         #     self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
         # else:
         #     self.MovesSinceLastPawn = 0
-        # self.turn = 'w' if self.turn == 'b' else 'b'
+        self.turn = 'w' if self.turn == 'b' else 'b'
 
         print("move list is " + str(self.moveList))
         # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)

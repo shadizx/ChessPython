@@ -81,7 +81,6 @@ def refresh():
     drawboard()
     drawpieces()
     pygame.display.update()
-    print("refreshed board")
 ###################################################################
 # piecedisappear()
 # clears the static location of a piece
@@ -91,12 +90,25 @@ def piecedisappear(p):
     drawpieces()
     sqtobecleared.draw()   
 ###################################################################
+# animateMove()
+# does the animation for making a move
+def animateMove(p, pos):
+    if p.position in BOARD.moveDict and p.color == BOARD.turn:
+            for move in BOARD.moveDict[p.position]:
+                if (move == pos): # if a legal move position is the same as pos
+                    # MOVE THE PIECE
+                    BOARD.makeMove(p.position, move)
+                    # generate new moves for the new board
+                    BOARD.generateMoves(BOARD.turn)
+                    legalCircles.clear()
+                    PIECECLICKED = False 
+###################################################################
 # main driver
 def main():
     # running main window
     clock = pygame.time.Clock()
     run = True
-    BOARD.generateMoves()
+    BOARD.generateMoves("w")
 
     refresh()
     PIECECLICKED = False
@@ -108,10 +120,16 @@ def main():
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # if left-clicked
+                    # check if previously clicked on a piece to move the piece there
+                    # this way, we can drag and click to move pieces
                     #get mouse pos
                     xpos = getmpos()[0]
                     ypos = getmpos()[1]
                     pos = 8 * ypos + xpos
+                    
+                    if PIECECLICKED:
+                        animateMove(p, pos)
+                        
                     # check if there is a piece where the mouse has been clicked
                     if (pos in BOARD.pieceList):
                         PIECECLICKED = True
@@ -128,7 +146,8 @@ def main():
                             # need to check if mouse is going out of the window, then let go of piece
                             piece2mouse(xloc, yloc, p)
                     if (pos not in BOARD.pieceList) or (BOARD.pieceList[pos].color != BOARD.turn):
-                        # if clicked on board, remove available moves and refresh board
+                        # if clicked elsewhere, remove available moves and refresh board
+                        PIECECLICKED = False
                         legalCircles.clear()
                         refresh()
             elif event.type == pygame.MOUSEBUTTONUP: # if mouse is unclicked
@@ -141,16 +160,15 @@ def main():
                         
                         # check if we can even move there:
                         if p.position in BOARD.moveDict and p.color == BOARD.turn:
-                            print("movedict is " + str(BOARD.moveDict))
                             for move in BOARD.moveDict[p.position]:
                                 if (move == pos): # if a legal move position is the same as pos
                                     # MOVE THE PIECE
                                     BOARD.makeMove(p.position, move)
                                     # generate new moves for the new board
-                                    BOARD.generateMoves()
+                                    BOARD.generateMoves(BOARD.turn)
                                     legalCircles.clear()
+                                    PIECECLICKED = False
                         refresh()
-                        PIECECLICKED = False
             elif pygame.mouse.get_pressed()[0] & PIECECLICKED: # while holding the piece
                 # make the piece dissapear from it's previous place:
                 piecedisappear(p)
@@ -171,7 +189,7 @@ def main():
                 print("taken pieces is " + str(BOARD.takenPieces))
                 if event.key == pygame.K_LEFT:
                     BOARD.revertMove()
-                    BOARD.generateMoves()
+                    BOARD.generateMoves(BOARD.turn)
                     legalCircles.clear()
                     refresh()
                     print(BOARD.unmadeMoves)
@@ -179,7 +197,7 @@ def main():
                     if (len(BOARD.unmadeMoves) > 0):
                             BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1])
                             BOARD.unmadeMoves.pop()
-                            BOARD.generateMoves()
+                            BOARD.generateMoves(BOARD.turn)
                             legalCircles.clear()
                             refresh()
                             print(BOARD.unmadeMoves)
