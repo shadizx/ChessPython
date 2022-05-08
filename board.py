@@ -6,14 +6,14 @@ import piece
 from dataclasses import dataclass
 from collections import defaultdict
 
-###################### constants ############################
+###################### aconstants ############################
 width = height = 640                           # constant width and height, set for basic testing
 win = pygame.display.set_mode((width, height)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
-DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+DEFAULTFEN = "///3B//// w KQkq - 0 1"
 ###################### global variables ############################
 
 ##############################################################
@@ -207,18 +207,153 @@ class Board:
 
     # loadnmoves
     # loads knight moves for all knights
-    def loadnmoves(self, piece):
-        pass
+    def loadnmoves(self, knight):
+        pos = knight.position
+        # take the file of our knight for restrictions
+        fileOrigin = pos % 8
+        # +-15, +-17, +-6, +-10 are the legal possible moves for knight
+        for takepos in [pos + 15, pos + 17, pos + 6, pos + 10, pos - 15, pos - 17, pos - 6, pos - 10]:
+            # take file of opp knight to compare below
+            file = takepos % 8
+            # difference of files must be 1 or 2 to be a valid knight move
+            if (abs(fileOrigin - file) in [1,2]):
+                # check if piece exists there with a different color
+                if (takepos in self.pieceList):
+                    if (self.pieceList[takepos].color != knight.color):
+                        self.moveDict[pos].append(takepos)
+                else:
+                    self.moveDict[pos].append(takepos)
 
     # loadrmoves
     # loads rook moves for all rooks
-    def loadrmoves(self, piece):
-        pass
+    def loadrmoves(self, rook):
+        pos = rook.position
+        rank,file = piece.getRankFile(pos)
+        # first calculate north moves:
+        for takepos in range(pos + 8, 64, 8):
+            # check if there is a piece on a square
+            if takepos in self.pieceList:
+                # check if opp color, then append that move and go to the next one
+                if self.pieceList[takepos].color != rook.color:
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    # if same color on that square, then break
+                    break
+            else:
+                # if no piece on that square, append move and keep going
+                self.moveDict[pos].append(takepos)
+
+        # calculate south moves:
+        for takepos in range(pos - 8, file - 1, -8):
+            if takepos in self.pieceList:
+                if self.pieceList[takepos].color != rook.color:
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    break
+            else: 
+                self.moveDict[pos].append(takepos)
+
+        # calculate east moves:
+        for takepos in range(pos + 1, 8 * (rank + 1) , +1):
+            if takepos in self.pieceList:
+                if self.pieceList[takepos].color != rook.color:
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    break
+            else: 
+                self.moveDict[pos].append(takepos)
+
+        # #calculate west moves:
+        for takepos in range(pos - 1, 8 * rank - 1, -1):
+            if takepos in self.pieceList:
+                if self.pieceList[takepos].color != rook.color:
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    break
+            else: 
+                self.moveDict[pos].append(takepos)
 
     # loadbmoves
     # loads bishop moves for all bishops
-    def loadbmoves(self, piece):
-        pass
+    def loadbmoves(self, bishop):
+        pos = bishop.position
+        rankOrigin,fileOrigin = piece.getRankFile(pos)
+        #first calculate up right moves:
+        if (rankOrigin != 7 and fileOrigin != 7):
+            for takepos in range(pos + 9, 64, 9):
+                rank,file = piece.getRankFile(takepos)
+                if (rank == 7 or file == 7):
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    # check if there is a piece on a square
+                    if takepos in self.pieceList:
+                        # check if opp color, then append that move and go to the next one
+                        if self.pieceList[takepos].color != bishop.color:
+                            self.moveDict[pos].append(takepos)
+                            break
+                        else:
+                            # if same color on that square, then break
+                            break
+                    else:
+                        # if no piece on that square, append move and keep going
+                        self.moveDict[pos].append(takepos)
+
+        # calculate up left moves:
+        if (rankOrigin != 7 and fileOrigin != 0):
+            for takepos in range(pos + 7, 64, 7):
+                rank,file = piece.getRankFile(takepos)
+                if (rank == 7 or file == 0):
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    if takepos in self.pieceList:
+                        if self.pieceList[takepos].color != bishop.color:
+                            self.moveDict[pos].append(takepos)
+                            break
+                        else:
+                            break
+                    else: 
+                        self.moveDict[pos].append(takepos)
+
+        #calculate down right moves:
+        if (rankOrigin != 0 and fileOrigin != 7):
+            for takepos in range(pos - 7, 0, -7):
+                rank,file = piece.getRankFile(takepos)
+                if (rank == 0 or file == 7):
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    if takepos in self.pieceList:
+                        if self.pieceList[takepos].color != bishop.color:
+                            self.moveDict[pos].append(takepos)
+                            break
+                        else:
+                            break
+                    else: 
+                        self.moveDict[pos].append(takepos)
+
+        # calculate down left moves:
+        if (rankOrigin != 0 and fileOrigin != 0):
+            for takepos in range(pos - 9, 0, -9):
+                rank,file = piece.getRankFile(takepos)
+                if (rank == 0 or file == 0):
+                    self.moveDict[pos].append(takepos)
+                    break
+                else:
+                    if takepos in self.pieceList:
+                        if self.pieceList[takepos].color != bishop.color:
+                            self.moveDict[pos].append(takepos)
+                            break
+                        else:
+                            break
+                    else: 
+                        self.moveDict[pos].append(takepos)
+ 
 
     # loadqmoves
     # loads queen moves for all queens
@@ -265,12 +400,12 @@ class Board:
         # add the move to moveList
         self.moveList.append((origin, dest))
 
-        # check how many moves since last pawn move
-        if piece.type != 'p':
-            self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
-        else:
-            self.MovesSinceLastPawn = 0
-        self.turn = 'w' if self.turn == 'b' else 'b'
+        # # check how many moves since last pawn move
+        # if piece.type != 'p':
+        #     self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
+        # else:
+        #     self.MovesSinceLastPawn = 0
+        # self.turn = 'w' if self.turn == 'b' else 'b'
 
         print("move list is " + str(self.moveList))
         # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)
