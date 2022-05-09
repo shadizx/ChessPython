@@ -124,6 +124,8 @@ def main():
                     print("######################################################################")
                     print("checkdict is ", BOARD.checkDict)
                     print(BOARD.inCheck)
+                    print("######################################################################")
+                    print("lineofcheck is ", BOARD.lineOfCheck)
                     # check if previously clicked on a piece to move the piece there
                     # this way, we can drag and click to move pieces
                     #get mouse pos

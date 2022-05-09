@@ -1,5 +1,6 @@
 # board.py
 # responsible for boad structure and operations
+from numpy import take
 import pygame
 from copy import copy
 import piece
@@ -13,7 +14,7 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
-DEFAULTFEN = "4k/n/6rp//6N/R4P//5K w KQkq - 0 1"
+DEFAULTFEN = "4k//6q///Q4//5K w KQkq - 0 1"
 ###################### global variables ############################
 
 ##############################################################
@@ -132,7 +133,7 @@ class Board:
                     elif (kingRank > oppRank and kingFile < oppFile):
                         for pos in range(oppPos, kingPos, 7):
                             self.lineOfCheck.add(pos)
-                elif oppPiece.type in ("r","q"):
+                if oppPiece.type in ("r","q"):
                     # if rook or queen is attacking, need vertical and horz squares
                     # if king is to the right of attacking piece:
                     if (kingRank == oppRank and kingFile > oppFile):
@@ -256,7 +257,9 @@ class Board:
             # check if there is a piece on a square
             if takePos in self.pieceList:
                 # check if opp color, then append that move and go to the next one
-                if self.pieceList[takePos].color != rook.color:
+                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+                    self.addMove(rook, takePos)
+                elif self.pieceList[takePos].color != rook.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(rook, takePos)
                         break
@@ -271,7 +274,9 @@ class Board:
         # calculate south moves:
         for takePos in range(pos - 8, file - 1, -8):
             if takePos in self.pieceList:
-                if self.pieceList[takePos].color != rook.color:
+                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+                    self.addMove(rook, takePos)
+                elif self.pieceList[takePos].color != rook.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(rook, takePos)
                         break
@@ -284,7 +289,9 @@ class Board:
         # calculate east moves:
         for takePos in range(pos + 1, 8 * (rank + 1) , +1):
             if takePos in self.pieceList:
-                if self.pieceList[takePos].color != rook.color:
+                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+                    self.addMove(rook, takePos)
+                elif self.pieceList[takePos].color != rook.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(rook, takePos)
                         break
@@ -297,7 +304,9 @@ class Board:
         # #calculate west moves:
         for takePos in range(pos - 1, 8 * rank - 1, -1):
             if takePos in self.pieceList:
-                if self.pieceList[takePos].color != rook.color:
+                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+                    self.addMove(rook, takePos)
+                elif self.pieceList[takePos].color != rook.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(rook, takePos)
                         break
@@ -321,8 +330,10 @@ class Board:
         for takePos in range(pos + 9, lim + 1, 9):
             # check if there is a piece on a square
             if takePos in self.pieceList:
+                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+                    self.addMove(bishop, takePos)
                 # check if opp color, then append that move and go to the next one
-                if self.pieceList[takePos].color != bishop.color:
+                elif self.pieceList[takePos].color != bishop.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(bishop, takePos)
                         break
@@ -339,7 +350,9 @@ class Board:
         lim = min(fileOrigin, 7 - rankOrigin) * 7 + pos
         for takePos in range(pos + 7, lim + 1, 7):
             if takePos in self.pieceList:
-                if self.pieceList[takePos].color != bishop.color:
+                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+                    self.addMove(bishop, takePos)
+                elif self.pieceList[takePos].color != bishop.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(bishop, takePos)
                         break
@@ -354,7 +367,9 @@ class Board:
         lim = pos - min(7 - fileOrigin, rankOrigin) * 7
         for takePos in range(pos - 7, lim - 1, -7):
             if takePos in self.pieceList:
-                if self.pieceList[takePos].color != bishop.color:
+                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+                    self.addMove(bishop, takePos)
+                elif self.pieceList[takePos].color != bishop.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(bishop, takePos)
                         break
@@ -369,7 +384,9 @@ class Board:
         lim = pos - min(rankOrigin, fileOrigin) * 9
         for takePos in range(pos - 9, lim - 1, -9):
             if takePos in self.pieceList:
-                if self.pieceList[takePos].color != bishop.color:
+                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+                    self.addMove(bishop, takePos)
+                elif self.pieceList[takePos].color != bishop.color:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(bishop, takePos)
                         break
