@@ -1,6 +1,5 @@
 # board.py
 # responsible for boad structure and operations
-from numpy import take
 import pygame
 from copy import copy
 import piece
@@ -14,86 +13,10 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
-DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+DEFAULTFEN = "4k/n/6rp//6N/R4P//5K w KQkq - 0 1"
 ###################### global variables ############################
 
 ##############################################################
-# class fen
-# store default values used for board translation
-@dataclass# returns piecelist array
-class fen():
-    # public values to be accessed later on
-    FEN: str
-    PIECES_DICT = {'p': piece.pawn("b"),   'n': piece.knight("b"),
-                   'b': piece.bishop("b"), 'r': piece.rook("b"),
-                   'q': piece.queen("b"),  'k': piece.king("b"),
-                   'P': piece.pawn("w"),   'N': piece.knight("w"),
-                   'B': piece.bishop("w"), 'R': piece.rook("w"),
-                   'Q': piece.queen("w"),  'K': piece.king("w")}
-    castling_dict = {'k': "black_kingside", 'K': "white_kingside", 'q': "black_queenside", 'Q': "white_queenside"}  # TODO: edit this!
-    # StartFEN = DEFAULTFEN
-    CastlingsAllowed = []  # resets castles so we can assign them again here
-    turn_dict = {'w': 0, 'b': 1}  # TODO: edit this as required!
-
-    # assigning pieceList array
-    pieces = {}
-    # LoadfromFEN
-    # load the board from a FEN
-    def LoadFromFEN(self):
-        self.EnPassantSquare = -1
-        splitfen = self.FEN.split(' ')
-        file = 0
-        rank = 7
-        for s in splitfen[0]:  # Loop through the first string: piece placement
-            if s == "/":
-                rank -= 1
-                file = 0
-            elif s in ['1', '2', '3', '4', '5', '6', '7', '8']:
-                file += int(s)
-            else:
-                # set piece position according to formula below
-                position = 8 * rank + file
-
-                piece = copy(self.PIECES_DICT[s])  # IMPORTANT: generate a COPY of the object to avoid overwrite issues!
-                piece.setPos(position)
-                self.pieces[position] = piece
-                file += 1
-        for s in splitfen[1]:  # Toggle turns
-            self.Turn = 'w' if s == 'w' else 'b'
-        for s in splitfen[2]:  # Toggle castling states
-            if s in self.castling_dict:
-                self.CastlingsAllowed.append(self.castling_dict[s])
-        if splitfen[3] != '-':  # Translate en passant square to a square on the board, if available
-            s = splitfen[3]
-            self.EnPassantSquare = 0
-            # self.EnPassantSquare = self.SquareDict[(s[0], s[1])]  # TODO: fix this!
-        self.MovesSinceLastPawn = int(splitfen[4])  # determine moves since last pawn move (for 50-move rule)
-        self.MoveNumber = int(splitfen[5])  # determine move number
-
-        return (self.pieces, self.Turn, self.CastlingsAllowed, self.EnPassantSquare, self.MovesSinceLastPawn, self.MoveNumber)
-
-# class fen
-###################################################################
-
-###################################################################
-# class Square:
-# responsible for each square on the board
-class Square:
-    # default constructor
-    WHITE=(248,220,180)
-    BLACK=(184,140,100)
-
-    def __init__(self, position, color):
-        self.position = position
-        self.isWhite = color
-        self.color = self.WHITE if self.isWhite else self.BLACK
-
-    def draw(self):
-        y, x = divmod(self.position, 8)
-        pygame.draw.rect(win, self.color, pygame.Rect(x * dimension, height - (y+1) * dimension, dimension, dimension))
-
-# class square
-###################################################################
 
 ###################################################################
 # class Board
@@ -141,7 +64,6 @@ class Board:
     # useful for generating the moves of board
     def generateMoves(self, turn):
         # clear the moveDict
-        self.moveDict.clear()
         for piece in self.pieceList.values():
             if piece.color == turn:
                 if piece.type == 'p':
@@ -157,8 +79,6 @@ class Board:
                 elif piece.type == "k":
                     self.loadkmoves(piece)
 
-        self.lineOfCheck = set()
-
     # adds move to both moveDict and checkdict
     def addMove(self, piece, dest):
         self.moveDict[piece].append(dest)
@@ -168,7 +88,6 @@ class Board:
             self.whiteLegalMoves[dest].append(piece)
         else:
             self.blackLegalMoves[dest].append(piece)
-
 
     # function for checking if king is in check in O(1) time
     # updates the line of check set efficiently 
@@ -181,6 +100,7 @@ class Board:
         kingRank, kingFile = piece.getRankFile(kingPos)
         # if the king is in check
 
+        # print("move number is", self.moveCounter, "king pos is ", kingPos, "check dict is ", str(self.checkDict))
         if kingPos in self.checkDict:
             print(color, "is in check")
             self.inCheck = True
@@ -266,6 +186,8 @@ class Board:
                 if abs((takePos % 8) - (pos % 8)) == 1:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(pawn, takePos)
+            elif takePos not in self.pieceList:
+                self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)
         #######################################################################
         # calculating en passant moves:
         # parameters for an en passant move is:
@@ -323,7 +245,7 @@ class Board:
                 else:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(knight, takePos)
-        
+
     # loadrmoves
     # loads rook moves for all rooks
     def loadrmoves(self, rook):
@@ -478,7 +400,6 @@ class Board:
                     if ((king.color == "w" and takePos not in self.blackLegalMoves) or (king.color == "b" and takePos not in self.whiteLegalMoves)):
                         self.addMove(king, takePos)
 
-
     # makeMove
     # useful for moving a piece and updating our directory accordingly
     def makeMove(self, origin, dest):
@@ -507,7 +428,6 @@ class Board:
             self.enpassantPawnPos = -1
             print("EN CHOSSANT HAS BEEN TAKEN")
 
-
         # move the piece to its destination
         piece.setPos(dest)
         # update the position of the piece in pieceList
@@ -524,15 +444,28 @@ class Board:
         #     self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
         # else:
         #     self.MovesSinceLastPawn = 0
-        self.checkDict = defaultdict(lambda: [])
+        # self.checkDict = defaultdict(lambda: [])
+        # self.whiteLegalMoves.clear()
+        # self.blackLegalMoves.clear()
+        # self.lineOfCheck = set()
+
+
+        # after you move, clear the movedict, and checkdict
+        self.moveDict.clear()
+        print("movedict has been cleared")
+        self.checkDict.clear()
+        print("checkdict has been cleared")
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
-
+                    
         self.generateMoves(self.turn)
         self.turn = 'w' if self.turn == 'b' else 'b'
         # generate new moves after making a move
+        self.lineOfCheck.clear()
         self.isInCheck(self.turn)
+        self.moveDict.clear()
         self.generateMoves(self.turn)
+
 
         # TODO: also update CastlingsAllowed AND enpassant square right here (much neater)
 
@@ -557,6 +490,7 @@ class Board:
             # generate new moves after making a move
             self.isInCheck(self.turn)
             self.generateMoves(self.turn)
+
     # draw
     # draws board squares
     def draw(self):
@@ -571,6 +505,81 @@ class Board:
         else:
             for square in self.boardColors:
                 square.draw()
-
 #class board
+###################################################################
+# class fen
+# store default values used for board translation
+@dataclass# returns piecelist array
+class fen():
+    # public values to be accessed later on
+    FEN: str
+    PIECES_DICT = {'p': piece.pawn("b"),   'n': piece.knight("b"),
+                   'b': piece.bishop("b"), 'r': piece.rook("b"),
+                   'q': piece.queen("b"),  'k': piece.king("b"),
+                   'P': piece.pawn("w"),   'N': piece.knight("w"),
+                   'B': piece.bishop("w"), 'R': piece.rook("w"),
+                   'Q': piece.queen("w"),  'K': piece.king("w")}
+    castling_dict = {'k': "black_kingside", 'K': "white_kingside", 'q': "black_queenside", 'Q': "white_queenside"}  # TODO: edit this!
+    # StartFEN = DEFAULTFEN
+    CastlingsAllowed = []  # resets castles so we can assign them again here
+    turn_dict = {'w': 0, 'b': 1}  # TODO: edit this as required!
+
+    # assigning pieceList array
+    pieces = {}
+    # LoadfromFEN
+    # load the board from a FEN
+    def LoadFromFEN(self):
+        self.EnPassantSquare = -1
+        splitfen = self.FEN.split(' ')
+        file = 0
+        rank = 7
+        for s in splitfen[0]:  # Loop through the first string: piece placement
+            if s == "/":
+                rank -= 1
+                file = 0
+            elif s in ['1', '2', '3', '4', '5', '6', '7', '8']:
+                file += int(s)
+            else:
+                # set piece position according to formula below
+                position = 8 * rank + file
+
+                piece = copy(self.PIECES_DICT[s])  # IMPORTANT: generate a COPY of the object to avoid overwrite issues!
+                piece.setPos(position)
+                self.pieces[position] = piece
+                file += 1
+        for s in splitfen[1]:  # Toggle turns
+            self.Turn = 'w' if s == 'w' else 'b'
+        for s in splitfen[2]:  # Toggle castling states
+            if s in self.castling_dict:
+                self.CastlingsAllowed.append(self.castling_dict[s])
+        if splitfen[3] != '-':  # Translate en passant square to a square on the board, if available
+            s = splitfen[3]
+            self.EnPassantSquare = 0
+            # self.EnPassantSquare = self.SquareDict[(s[0], s[1])]  # TODO: fix this!
+        self.MovesSinceLastPawn = int(splitfen[4])  # determine moves since last pawn move (for 50-move rule)
+        self.MoveNumber = int(splitfen[5])  # determine move number
+
+        return (self.pieces, self.Turn, self.CastlingsAllowed, self.EnPassantSquare, self.MovesSinceLastPawn, self.MoveNumber)
+
+# class fen
+###################################################################
+
+###################################################################
+# class Square:
+# responsible for each square on the board
+class Square:
+    # default constructor
+    WHITE=(248,220,180)
+    BLACK=(184,140,100)
+
+    def __init__(self, position, color):
+        self.position = position
+        self.isWhite = color
+        self.color = self.WHITE if self.isWhite else self.BLACK
+
+    def draw(self):
+        y, x = divmod(self.position, 8)
+        pygame.draw.rect(win, self.color, pygame.Rect(x * dimension, height - (y+1) * dimension, dimension, dimension))
+
+# class square
 ###################################################################

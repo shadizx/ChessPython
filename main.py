@@ -20,7 +20,7 @@ circley = -40
 circler = 20
 # available legal moves
 legalCircles = []
-##############################################################
+##################################################################
 # piece BOARD
 # start of with BOARD of starting pieces
 # BOARD = BOARD
@@ -44,10 +44,9 @@ def drawboard():
 def drawpieces():
     for i in BOARD.pieceList.values():
         i.draw()
-
 ###################################################################
 # getmpos
-# getting the    of the mouse upon clicking
+# getting the position of the mouse upon clicking
 def getmpos():
     pos = pygame.mouse.get_pos()
     x = pos[0] // 80
@@ -110,7 +109,7 @@ def main():
 
     refresh()
     PIECECLICKED = False
-#################################while loop####################################################
+################################# while loop ####################################################
     while run:
         clock.tick(fps)
         for event in pygame.event.get():
@@ -118,8 +117,13 @@ def main():
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # if left-clicked
+                    # FOR TESTING PURPOSES:
+                    print("\n\n######################################################################")
+                    print("movedict is ", str(BOARD.moveDict))
+                    print("turn is for ", BOARD.turn)
+                    print("######################################################################")
+                    print("checkdict is ", BOARD.checkDict)
                     print(BOARD.inCheck)
-                    print(BOARD.checkDict)
                     # check if previously clicked on a piece to move the piece there
                     # this way, we can drag and click to move pieces
                     #get mouse pos
