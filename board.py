@@ -14,7 +14,7 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
-DEFAULTFEN = "4k//6q///Q4//5K w KQkq - 0 1"
+DEFAULTFEN = "//4k/K//// w KQkq - 0 1"
 ###################### global variables ############################
 
 ##############################################################
@@ -187,6 +187,10 @@ class Board:
                 if abs((takePos % 8) - (pos % 8)) == 1:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(pawn, takePos)
+            elif takePos in self.pieceList and self.pieceList[takePos].color == pawn.color:
+                if abs((takePos % 8) - (pos % 8)) == 1:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)
             elif takePos not in self.pieceList:
                 self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)
         #######################################################################
@@ -243,6 +247,9 @@ class Board:
                     if (self.pieceList[takePos].color != knight.color):
                         if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                             self.addMove(knight, takePos)
+                    else:
+                        if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                            self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
                 else:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(knight, takePos)
@@ -264,6 +271,8 @@ class Board:
                         self.addMove(rook, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
                     # if same color on that square, then break
                     break
             else:
@@ -281,6 +290,8 @@ class Board:
                         self.addMove(rook, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
                     break
             else:
                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
@@ -296,6 +307,8 @@ class Board:
                         self.addMove(rook, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
                     break
             else:
                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
@@ -311,6 +324,8 @@ class Board:
                         self.addMove(rook, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
                     break
             else:
                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
@@ -338,6 +353,8 @@ class Board:
                         self.addMove(bishop, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
                     # if same color on that square, then break
                     break
             else:
@@ -357,6 +374,8 @@ class Board:
                         self.addMove(bishop, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
                     break
             else:
                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
@@ -374,6 +393,8 @@ class Board:
                         self.addMove(bishop, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
                     break
             else:
                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
@@ -391,6 +412,8 @@ class Board:
                         self.addMove(bishop, takePos)
                         break
                 else:
+                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
                     break
             else:
                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
