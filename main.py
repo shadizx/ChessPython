@@ -117,15 +117,17 @@ def main():
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # if left-clicked
-                    # FOR TESTING PURPOSES:
-                    print("\n\n######################################################################")
-                    print("movedict is ", str(BOARD.moveDict))
-                    print("turn is for ", BOARD.turn)
-                    print("######################################################################")
-                    print("checkdict is ", BOARD.checkDict)
-                    print(BOARD.inCheck)
-                    print("######################################################################")
-                    print("lineofcheck is ", BOARD.lineOfCheck)
+                    # # FOR TESTING PURPOSES:
+                    # print("\n\n######################################################################")
+                    # print("movedict is ", str(BOARD.moveDict))
+                    # print("turn is for ", BOARD.turn)
+                    # print("######################################################################")
+                    # print("checkdict is ", BOARD.checkDict)
+                    # print(BOARD.inCheck)
+                    # print("######################################################################")
+                    # print("lineofcheck is ", BOARD.lineOfCheck)
+                    print(str(BOARD.pinnedPieces.keys()))
+                    # print(str(BOARD.whiteLegalMoves.keys()))
                     # check if previously clicked on a piece to move the piece there
                     # this way, we can drag and click to move pieces
                     #get mouse pos
