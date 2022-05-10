@@ -1,6 +1,8 @@
 # board.py
 # responsible for boad structure and operations
+from tabnanny import check
 from turtle import bk
+from numpy import take
 import pygame
 from copy import copy
 import piece
@@ -32,7 +34,7 @@ class Board:
     # list of moves that has happened so far:
     moveList = []
     # start with this FEN
-    FEN = "5q2/2n5/3k4/3n4/3N4/3K4/4N3/1Q6 w - - 0 1"
+    FEN = "q7/8/8/8/3K4/8/8/k7 w - - 0 1"
     # tracks taken pieces to use in revertmove
     # maps the move number to a piece that was taken on that move
     takenPieces = {}
@@ -299,38 +301,44 @@ class Board:
                 checkRestriction = ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
                 # if you're not pinned, or you're pinned but you can take the pinned piece
                 pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
-                # check if there is a piece on a square
-                # also check if you are even able to move ther (with checkrestriction)
-                if checkRestriction:
-                    if takePos in self.pieceList:
-                        # if same color piece on that square, and that to the legal moves of that piece and break
-                        # we do this so the piece is "protecting" the other piece, so king cant take
-                        if self.pieceList[takePos].color == p.color:
-                            self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
-                            break
-                        else:
-                        # now we are checking if there is a piece on this square that is the opposite color of our piece
-                        # if this is the first enemy piece we encounter, add this to our legal moves (and only this)
-                        # we also add this enemy piece to the pinnedPieces, to see if its the only piece standing in the way of check
-                            # print("pos is ", pos, "pin restriction is ", pinRestriction)
-                            if firstAdd and pinRestriction:
-                                self.addMove(p, takePos)
-                                posInBetween = takePos
-                                firstAdd = False
-                            # if our second piece is not a king, then there are no pinned pieces and break
-                            elif self.pieceList[takePos].type != "k":
-                                break
-                            else:
-                                # if it is a king, then there is a piece pinned!
-                                self.pinnedPieces[posInBetween] = pos
+
+                # for each square that we are checking, there is either a piece on that square or not.
+                # first lets check if there is a square there:
+                if takePos in self.pieceList:
+                    # now there are two cases, either there is a same color piece here, or opponent
+                    # if there is a same color piece here, make sure this piece is protecting that, then break because rest squares in that dir don't matter
+                    if self.pieceList[takePos].color == p.color:
+                        self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
+                        break
+                    # now check if there is an opponent piece on this square
+                    # if this is the first opp piece, and we are not in check or pinned, then add this to our movedict
+                    if firstAdd and checkRestriction and pinRestriction:
+                        self.addMove(p, takePos)
+                        # save this position, incase it is a pinned piece
+                        posInBetween = takePos
+                        firstAdd = False
+                    # now if it is not the first time adding an opponent piece, it must either be a king, or we will break
+                    elif not firstAdd:
+                        # if it is a king, and the posinbetween location to our pinned pieces list and break
+                        if self.pieceList[takePos].type == "k":
+                            self.pinnedPieces[posInBetween] = pos
+                        # if it is not a king on our second add, then break because there is no point
+                        break
+                # now check if this position is an empty square
+                # if its the first time you are adding
+                elif firstAdd:
+                    # if we are adding an empty square on the first time, our piece can move there if we are not in check or not pinned
+                    if pinRestriction and checkRestriction:
+                        self.addMove(p, takePos)
                     else:
-                        oppcol = "b" if p.color == "w" else "w"
-                        # if no piece on that square, append move and keep going
-                        if firstAdd == True and pinRestriction:
-                            self.addMove(p,takePos)
-                        elif posInBetween == self.kings[oppcol]:
-                            self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
-                            break        
+                        self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
+                # if it's not your second add, and you are looking at an empty square, do nothing and keep going
+                # KEEP GOING UNLESS THE FIRSTADDED PIECE WAS A KING, TO GET SQUARES BEHIND KING
+                elif not firstAdd:
+                    oppcol = "b" if p.color == "w" else "w"
+                    if posInBetween == self.kings[oppcol]:
+                        self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
+                        break    
 
     # loadkmoves
     # loads king moves for all kings
