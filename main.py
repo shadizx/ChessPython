@@ -21,9 +21,7 @@ circler = 20
 # available legal moves
 legalCircles = []
 ##################################################################
-# piece BOARD
-# start of with BOARD of starting pieces
-# BOARD = BOARD
+
 ###################################################################
 # drawcircle
 def circlemoves(surface, color, center, radius):
@@ -99,7 +97,9 @@ def animateMove(p, pos):
                     BOARD.makeMove(p.position, move)
                     # generate new moves for the new board
                     legalCircles.clear()
-                    PIECECLICKED = False 
+                    PIECECLICKED = False
+
+
 ###################################################################
 # main driver
 def main():
@@ -126,7 +126,7 @@ def main():
                     # print(BOARD.inCheck)
                     # print("######################################################################")
                     # print("lineofcheck is ", BOARD.lineOfCheck)
-                    print(str(BOARD.pinnedPieces.keys()))
+                    # print(str(BOARD.pinnedPieces.keys()))
                     # print(str(BOARD.whiteLegalMoves.keys()))
                     # check if previously clicked on a piece to move the piece there
                     # this way, we can drag and click to move pieces

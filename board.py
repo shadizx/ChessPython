@@ -13,7 +13,12 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
-DEFAULTFEN = "//3k3pn//3QB/// w KQkq - 0 1"
+DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+###################################################################
+# sounds for moving pieces
+pygame.mixer.init()
+moveSound = pygame.mixer.Sound("sounds/move.ogg")
+takeSound = pygame.mixer.Sound("capture/move.ogg")
 ###################################################################
 # class Board
 # inherits from fen, responsible for board square colors
@@ -65,6 +70,11 @@ class Board:
         # clear the moveDict
         for piece in self.pieceList.values():
             if piece.color == turn:
+                # check if a double check has happened, only the king can move then
+                if len(self.checkDict[self.kings[piece.color]]) > 1:
+                    print("double check")
+                    self.loadkmoves(piece)
+                    break
                 if piece.type == 'p':
                     self.loadpmoves(piece)
                 elif piece.type == "n":
@@ -277,7 +287,7 @@ class Board:
             for takePos in range(startList[i], endList[i], incList[i]):
                 checkRestriction = ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
                 # if you're not pinned, or you're pinned but you can take the pinned piece
-                pinRestriction = pos not in self.pinnedPieces or (self.pinnedPieces[pos] == takePos)
+                pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
                 # check if there is a piece on a square
                 # also check if you are even able to move ther (with checkrestriction)
                 if checkRestriction:
@@ -291,7 +301,8 @@ class Board:
                         # now we are checking if there is a piece on this square that is the opposite color of our piece
                         # if this is the first enemy piece we encounter, add this to our legal moves (and only this)
                         # we also add this enemy piece to the pinnedPieces, to see if its the only piece standing in the way of check
-                            if firstAdd:
+                            # print("pos is ", pos, "pin restriction is ", pinRestriction)
+                            if firstAdd and pinRestriction:
                                 self.addMove(p, takePos)
                                 posInBetween = takePos
                                 firstAdd = False
@@ -303,11 +314,11 @@ class Board:
                                 self.pinnedPieces[posInBetween] = pos
                     else:
                         # if no piece on that square, append move and keep going
-                        if firstAdd == True:
+                        if firstAdd == True and pinRestriction:
                             self.addMove(p,takePos)
                         else:
                             self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
-                            break        
+                            # break        
 
     # loadkmoves
     # loads king moves for all kings
@@ -338,7 +349,10 @@ class Board:
         # if there is a piece being taken track that
         if dest in self.pieceList:
             self.takenPieces[self.moveCounter] = self.pieceList[dest]
+            pygame.mixer.Sound.play(takeSound)
             print("TAKEN PIECE ON MOVE", self.moveCounter)
+        else:
+            pygame.mixer.Sound.play(moveSound)
 
         # delete en passant'ed pawn if needed
         # need to check if the enpassant is ACTUALLY done
@@ -373,8 +387,8 @@ class Board:
         self.checkDict.clear()
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
-        self.pinnedPieces.clear()
         # generate new moves for the same side after they turned, to see if the other side is in check
+        self.pinnedPieces.clear()
         self.generateMoves(self.turn)
         # switch the move
         self.turn = 'w' if self.turn == 'b' else 'b'
