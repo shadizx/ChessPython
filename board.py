@@ -1,6 +1,5 @@
 # board.py
 # responsible for boad structure and operations
-from numpy import take
 import pygame
 from copy import copy
 import piece
@@ -14,7 +13,7 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
-DEFAULTFEN = "//4k/K//// w KQkq - 0 1"
+DEFAULTFEN = "///3Q//// w KQkq - 0 1"
 ###################### global variables ############################
 
 ##############################################################
@@ -51,6 +50,8 @@ class Board:
     # line of check set
     # set that contains the line of check (positions)
     lineOfCheck = set()
+
+    xrayLineOfCheck = defaultdict(lambda: [])
     # incheck boolean set to check if king is in check
     inCheck = False
     # two dicts for legal moves of white and black
@@ -69,14 +70,13 @@ class Board:
             if piece.color == turn:
                 if piece.type == 'p':
                     self.loadpmoves(piece)
-                elif piece.type == "r":
-                    self.loadrmoves(piece)
                 elif piece.type == "n":
                     self.loadnmoves(piece)
-                elif piece.type == "b":
-                    self.loadbmoves(piece)
+                elif piece.type in ("r", "b"):
+                    self.loadSlidingMoves(piece)
                 elif piece.type == "q":
-                    self.loadqmoves(piece)
+                    self.loadSlidingMoves(piece, 0)
+                    self.loadSlidingMoves(piece, 1)
                 elif piece.type == "k":
                     self.loadkmoves(piece)
 
@@ -254,191 +254,244 @@ class Board:
                     if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
                         self.addMove(knight, takePos)
 
-    # loadrmoves
-    # loads rook moves for all rooks
-    def loadrmoves(self, rook):
-        pos = rook.position
+    # loadSlidingMoves
+    # loads moves for queen bishop and rook
+    def loadSlidingMoves(self, p, queenOption = None):
+        pos = p.position
         rank,file = piece.getRankFile(pos)
-        # first calculate north moves:
-        for takePos in range(pos + 8, 64, 8):
-            # check if there is a piece on a square
-            if takePos in self.pieceList:
-                # check if opp color, then append that move and go to the next one
-                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
-                    self.addMove(rook, takePos)
-                elif self.pieceList[takePos].color != rook.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(rook, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
-                    # if same color on that square, then break
-                    break
-            else:
-                # if no piece on that square, append move and keep going
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                    self.addMove(rook, takePos)
+        # start and end index differs based on piece type
+        if p.type == "r" or queenOption == 0:
+            startList = [pos + 8, pos - 8, pos + 1, pos - 1]
+            endList =   [64, file - 1, 8 * (rank + 1), 8 * rank - 1]
+            incList =   [8,-8,1,-1]
+        elif p.type == "b" or queenOption == 1:
+            limNE = (7 - max(rank, file)) * 9 + pos
+            limNW = min(file, 7 - rank) * 7 + pos
+            limSE = pos - min(7 - file, rank) * 7
+            limSW = pos - min(rank, file) * 9
 
-        # calculate south moves:
-        for takePos in range(pos - 8, file - 1, -8):
-            if takePos in self.pieceList:
-                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
-                    self.addMove(rook, takePos)
-                elif self.pieceList[takePos].color != rook.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(rook, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
-                    break
-            else:
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                    self.addMove(rook, takePos)
+            startList = [pos + 9, pos + 7, pos - 7, pos - 9]
+            endList =   [limNE + 1, limNW + 1, limSE - 1, limSW - 1]
+            incList =   [9,7,-7,-9]
 
-        # calculate east moves:
-        for takePos in range(pos + 1, 8 * (rank + 1) , +1):
-            if takePos in self.pieceList:
-                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
-                    self.addMove(rook, takePos)
-                elif self.pieceList[takePos].color != rook.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(rook, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
-                    break
-            else:
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                    self.addMove(rook, takePos)
+        for i in range(4):
+            posInBetween = -1
+            pieceInBetween = set()
+            firstAdd = True
+            for takePos in range(startList[i], endList[i], incList[i]):
+                checkRestriction = ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
+                # check if there is a piece on a square
+                # also check if you are even able to move ther (with checkrestriction)
+                if checkRestriction:
+                    if takePos in self.pieceList:
+                        # if same color piece on that square, and that to the legal moves of that piece and break
+                        # we do this so the piece is "protecting" the other piece, so king cant take
+                        if self.pieceList[takePos].color == p.color:
+                            self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
+                            break
+                        else:
+                        # now we are checking if there is a piece on this square that is the opposite color of our piece
+                        # if this is the first enemy piece we encounter, add this to our legal moves (and only this)
+                        # we also add this enemy piece to the xrayLIneOfCheck, to see if its the only piece standing in the way of check
+                            if firstAdd:
+                                self.addMove(p, takePos)
+                                posInBetween = takePos
+                                firstAdd = False
+                            # if our second piece is not a king, then there are no pinned pieces and break
+                            elif self.pieceList[takePos].type != "k":
+                                break
+                            else:
+                                # if it is a king, then there is a piece pinned!
+                                self.xrayLineOfCheck[posInBetween].append(pos)
+                    else:
+                        # if no piece on that square, append move and keep going
+                        self.addMove(p, takePos)
 
-        # #calculate west moves:
-        for takePos in range(pos - 1, 8 * rank - 1, -1):
-            if takePos in self.pieceList:
-                if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
-                    self.addMove(rook, takePos)
-                elif self.pieceList[takePos].color != rook.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(rook, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
-                    break
-            else:
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                    self.addMove(rook, takePos)
+    # # loadrmoves
+    # # loads rook moves for all rooks
+    # def loadrmoves(self, rook):
+    #     pos = rook.position
+    #     rank,file = piece.getRankFile(pos)
+    #     # first calculate north moves:
+    #     for takePos in range(pos + 8, 64, 8):
+    #         # check if there is a piece on a square
+    #         if takePos in self.pieceList:
+    #             # check if opp color, then append that move and go to the next one
+    #             if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(rook, takePos)
+    #             elif self.pieceList[takePos].color != rook.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(rook, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
+    #                 # if same color on that square, then break
+    #                 break
+    #         else:
+    #             # if no piece on that square, append move and keep going
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                 self.addMove(rook, takePos)
 
-    # loadbmoves
-    # loads bishop moves for all bishops
-    def loadbmoves(self, bishop):
-        pos = bishop.position
-        rankOrigin,fileOrigin = piece.getRankFile(pos)
-        # first calculate up right moves:
-        # each time you go up right, file increases by one AND rank
-        # therefore, the max you can go to the up right direction is 
-        #   (7 - (max of file and rank)) spaces up right
-        #   up right is 9 spaces, therefore formula is 
-        lim = (7 - max(rankOrigin, fileOrigin)) * 9 + pos
-        for takePos in range(pos + 9, lim + 1, 9):
-            # check if there is a piece on a square
-            if takePos in self.pieceList:
-                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
-                    self.addMove(bishop, takePos)
-                # check if opp color, then append that move and go to the next one
-                elif self.pieceList[takePos].color != bishop.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(bishop, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
-                    # if same color on that square, then break
-                    break
-            else:
-                # if no piece on that square, append move and keep going
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                    self.addMove(bishop, takePos)
+    #     # calculate south moves:
+    #     for takePos in range(pos - 8, file - 1, -8):
+    #         if takePos in self.pieceList:
+    #             if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(rook, takePos)
+    #             elif self.pieceList[takePos].color != rook.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(rook, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
+    #                 break
+    #         else:
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                 self.addMove(rook, takePos)
 
-        # calculate up left moves:
-        # same formula as before, but file decrease by one, also going up 7
-        lim = min(fileOrigin, 7 - rankOrigin) * 7 + pos
-        for takePos in range(pos + 7, lim + 1, 7):
-            if takePos in self.pieceList:
-                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
-                    self.addMove(bishop, takePos)
-                elif self.pieceList[takePos].color != bishop.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(bishop, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
-                    break
-            else:
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
-                    self.addMove(bishop, takePos)
+    #     # calculate east moves:
+    #     for takePos in range(pos + 1, 8 * (rank + 1) , +1):
+    #         if takePos in self.pieceList:
+    #             if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(rook, takePos)
+    #             elif self.pieceList[takePos].color != rook.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(rook, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
+    #                 break
+    #         else:
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                 self.addMove(rook, takePos)
 
-        #calculate down right moves:
-        # similar formula for up left, but rank decreases by one instead of file
-        lim = pos - min(7 - fileOrigin, rankOrigin) * 7
-        for takePos in range(pos - 7, lim - 1, -7):
-            if takePos in self.pieceList:
-                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
-                    self.addMove(bishop, takePos)
-                elif self.pieceList[takePos].color != bishop.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(bishop, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
-                    break
-            else:
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
-                    self.addMove(bishop, takePos)
+    #     # #calculate west moves:
+    #     for takePos in range(pos - 1, 8 * rank - 1, -1):
+    #         if takePos in self.pieceList:
+    #             if self.pieceList[takePos].color != rook.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(rook, takePos)
+    #             elif self.pieceList[takePos].color != rook.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(rook, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(rook) if rook.color == "w" else self.blackLegalMoves[takePos].append(rook)
+    #                 break
+    #         else:
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                 self.addMove(rook, takePos)
 
-        # calculate down left moves:
-        # same as up right, but file and rank are both decreasing
-        lim = pos - min(rankOrigin, fileOrigin) * 9
-        for takePos in range(pos - 9, lim - 1, -9):
-            if takePos in self.pieceList:
-                if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
-                    self.addMove(bishop, takePos)
-                elif self.pieceList[takePos].color != bishop.color:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.addMove(bishop, takePos)
-                        break
-                else:
-                    if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
-                        self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
-                    break
-            else:
-                if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
-                    self.addMove(bishop, takePos)
+    # # loadbmoves
+    # # loads bishop moves for all bishops
+    # def loadbmoves(self, bishop):
+    #     pos = bishop.position
+    #     rankOrigin,fileOrigin = piece.getRankFile(pos)
+    #     # first calculate up right moves:
+    #     # each time you go up right, file increases by one AND rank
+    #     # therefore, the max you can go to the up right direction is 
+    #     #   (7 - (max of file and rank)) spaces up right
+    #     #   up right is 9 spaces, therefore formula is 
+    #     lim = (7 - max(rankOrigin, fileOrigin)) * 9 + pos
+    #     for takePos in range(pos + 9, lim + 1, 9):
+    #         # check if there is a piece on a square
+    #         if takePos in self.pieceList:
+    #             if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(bishop, takePos)
+    #             # check if opp color, then append that move and go to the next one
+    #             elif self.pieceList[takePos].color != bishop.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(bishop, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
+    #                 # if same color on that square, then break
+    #                 break
+    #         else:
+    #             # if no piece on that square, append move and keep going
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                 self.addMove(bishop, takePos)
+
+    #     # calculate up left moves:
+    #     # same formula as before, but file decrease by one, also going up 7
+    #     lim = min(fileOrigin, 7 - rankOrigin) * 7 + pos
+    #     for takePos in range(pos + 7, lim + 1, 7):
+    #         if takePos in self.pieceList:
+    #             if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(bishop, takePos)
+    #             elif self.pieceList[takePos].color != bishop.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(bishop, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
+    #                 break
+    #         else:
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
+    #                 self.addMove(bishop, takePos)
+
+    #     #calculate down right moves:
+    #     # similar formula for up left, but rank decreases by one instead of file
+    #     lim = pos - min(7 - fileOrigin, rankOrigin) * 7
+    #     for takePos in range(pos - 7, lim - 1, -7):
+    #         if takePos in self.pieceList:
+    #             if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(bishop, takePos)
+    #             elif self.pieceList[takePos].color != bishop.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(bishop, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
+    #                 break
+    #         else:
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
+    #                 self.addMove(bishop, takePos)
+
+    #     # calculate down left moves:
+    #     # same as up right, but file and rank are both decreasing
+    #     lim = pos - min(rankOrigin, fileOrigin) * 9
+    #     for takePos in range(pos - 9, lim - 1, -9):
+    #         if takePos in self.pieceList:
+    #             if self.pieceList[takePos].color != bishop.color and self.pieceList[takePos].type == "k":
+    #                 self.addMove(bishop, takePos)
+    #             elif self.pieceList[takePos].color != bishop.color:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.addMove(bishop, takePos)
+    #                     break
+    #             else:
+    #                 if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)):
+    #                     self.whiteLegalMoves[takePos].append(bishop) if bishop.color == "w" else self.blackLegalMoves[takePos].append(bishop)
+    #                 break
+    #         else:
+    #             if ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)): 
+    #                 self.addMove(bishop, takePos)
  
-    # loadqmoves
-    # loads queen moves for all queens
-    def loadqmoves(self, queen):
-        # queen moves is a combination of rook and bishop moves:
-        self.loadrmoves(queen)
-        self.loadbmoves(queen)
+    # # loadqmoves
+    # # loads queen moves for all queens
+    # def loadqmoves(self, queen):
+    #     # queen moves is a combination of rook and bishop moves:
+    #     self.loadrmoves(queen)
+    #     self.loadbmoves(queen)
 
-    # loadkmoves
-    # loads king moves for all kings
-    def loadkmoves(self, king):
-        pos = king.position
-        #check squares around king
-        for takePos in [pos + 8, pos - 8, pos + 9, pos - 9, pos + 1, pos - 1, pos + 7, pos -7]:
-            # check if takePos is in the right constraints
-            # check if takePos file is different by pos rank by only 1
-            if ((0 <= takePos <= 63) and (abs(pos % 8 - takePos % 8) <= 1)):
-                if takePos not in self.pieceList or self.pieceList[takePos].color != king.color:
-                    # check if the square that the king wants to go to is already being attacked
-                    if ((king.color == "w" and takePos not in self.blackLegalMoves) or (king.color == "b" and takePos not in self.whiteLegalMoves)):
-                        self.addMove(king, takePos)
+    # # loadkmoves
+    # # loads king moves for all kings
+    # def loadkmoves(self, king):
+    #     pos = king.position
+    #     #check squares around king
+    #     for takePos in [pos + 8, pos - 8, pos + 9, pos - 9, pos + 1, pos - 1, pos + 7, pos -7]:
+    #         # check if takePos is in the right constraints
+    #         # check if takePos file is different by pos rank by only 1
+    #         if ((0 <= takePos <= 63) and (abs(pos % 8 - takePos % 8) <= 1)):
+    #             if takePos not in self.pieceList or self.pieceList[takePos].color != king.color:
+    #                 # check if the square that the king wants to go to is already being attacked
+    #                 if ((king.color == "w" and takePos not in self.blackLegalMoves) or (king.color == "b" and takePos not in self.whiteLegalMoves)):
+    #                     self.addMove(king, takePos)
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
@@ -499,7 +552,7 @@ class Board:
         self.blackLegalMoves.clear()
                     
         self.generateMoves(self.turn)
-        self.turn = 'w' if self.turn == 'b' else 'b'
+        # self.turn = 'w' if self.turn == 'b' else 'b'
         # generate new moves after making a move
         self.lineOfCheck.clear()
         self.isInCheck(self.turn)
