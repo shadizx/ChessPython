@@ -123,10 +123,15 @@ def main():
                     # print("turn is for ", BOARD.turn)
                     # print("######################################################################")
                     print("checkdict is ", BOARD.checkDict)
-                    print("")
                     print(BOARD.inCheck)
                     print("######################################################################")
-                    print("piecelist is ", str(BOARD.pieceList))
+                    print("kings is ", str(BOARD.kings))
+                    print("line of check is ", BOARD.lineOfCheck)
+                    if BOARD.turn == "w":
+                        print("white legal moves is ", str(BOARD.whiteLegalMoves))
+                    else:
+                        print("black legal moves is ", str(BOARD.blackLegalMoves))
+
                     # print(str(BOARD.pinnedPieces.keys()))
                     # print(str(BOARD.whiteLegalMoves.keys()))
                     # check if previously clicked on a piece to move the piece there

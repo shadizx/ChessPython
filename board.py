@@ -1,5 +1,6 @@
 # board.py
 # responsible for boad structure and operations
+from turtle import bk
 import pygame
 from copy import copy
 import piece
@@ -31,7 +32,7 @@ class Board:
     # list of moves that has happened so far:
     moveList = []
     # start with this FEN
-    FEN = "///4k//5K// w - - 0 1"
+    FEN = "5q2/2n5/3k4/3n4/3N4/3K4/4N3/1Q6 w - - 0 1"
     # tracks taken pieces to use in revertmove
     # maps the move number to a piece that was taken on that move
     takenPieces = {}
@@ -47,7 +48,8 @@ class Board:
     checkDict = defaultdict(lambda: [])
     # dict that tracks the kings position
     # format: {"w" : 4, "b" : 60} means white king is on square 4 and black is on 60
-    kings = {"w" : 4, "b" : 60}
+    kings = {}
+
     # line of check set
     # set that contains the line of check (positions)
     lineOfCheck = set()
@@ -61,8 +63,13 @@ class Board:
     blackLegalMoves = defaultdict(lambda: [])
 
     def __init__(self):
-        self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber = fen(self.FEN).LoadFromFEN()
-        self.generateMoves(self.turn)
+        self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber, self.kings = fen(self.FEN).LoadFromFEN()
+        if self.turn == "w":
+            self.generateMoves("b")
+            self.generateMoves("w")
+        else:
+            self.generateMoves("w")
+            self.generateMoves("b")
 
     # generateMoves
     # useful for generating the moves of board
@@ -71,10 +78,11 @@ class Board:
         for piece in self.pieceList.values():
             if piece.color == turn:
                 # check if a double check has happened, only the king can move then
-                if len(self.checkDict[self.kings[piece.color]]) > 1:
-                    print("double check")
-                    self.loadkmoves(piece)
-                    break
+                if self.kings[piece.color] in self.checkDict:
+                    if len(self.checkDict[self.kings[piece.color]]) > 1:
+                        print("double check")
+                        self.loadkmoves(piece)
+                        break
                 if piece.type == 'p':
                     self.loadpmoves(piece)
                 elif piece.type == "n":
@@ -90,8 +98,8 @@ class Board:
     # adds move to both moveDict and checkdict
     def addMove(self, piece, dest):
         self.moveDict[piece].append(dest)
-        # if dest in self.pieceList:
-        #     self.checkDict[dest].append(piece)
+        if dest in self.pieceList:
+            self.checkDict[dest].append(piece)
         if piece.color == "w":
             self.whiteLegalMoves[dest].append(piece)
         else:
@@ -104,62 +112,62 @@ class Board:
         # check if position of the king is in the legal moves
         # if it is, it updates the line of check
 
-        # # get kings position
-        # kingPos = self.kings[color]
-        # kingRank, kingFile = piece.getRankFile(kingPos)
-        # # if the king is in check
+        # get kings position
+        kingPos = self.kings[color]
+        kingRank, kingFile = piece.getRankFile(kingPos)
+        # if the king is in check
 
-        # if kingPos in self.checkDict:
-        #     print(color, "is in check")
-        #     self.inCheck = True
-        #     # loop through each line of check (max 2, usually 1)
-        #     for i in range(len(self.checkDict[kingPos])):
-        #         # get the piece that's attacking
-        #         oppPiece = self.checkDict[kingPos][i]
-        #         oppPos = oppPiece.position
-        #         oppRank, oppFile = piece.getRankFile(oppPiece.position)
-        #         if oppPiece.type in ("p", "n"):
-        #             # if pawn or knight is attacking, you can only take the pawn
-        #             # therefore line of check is just the piece's position
-        #             self.lineOfCheck.add(oppPiece.position)
-        #         elif oppPiece.type in ("b", "q"):
-        #             # if bishop is attacking, we need all the diagonal squares
-        #             # if king is northeast of bishop
-        #             if (kingRank > oppRank and kingFile > oppFile):
-        #                 for pos in range(oppPos, kingPos, 9):
-        #                     self.lineOfCheck.add(pos)
-        #             # if king is southeast of bishop
-        #             elif (kingRank < oppRank and kingFile > oppFile):
-        #                 for pos in range(oppPos, kingPos, -7):
-        #                     self.lineOfCheck.add(pos)
-        #             # if king is southwest of bishop
-        #             elif (kingRank < oppRank and kingFile < oppFile):
-        #                 for pos in range(oppPos, kingPos, -9):
-        #                     self.lineOfCheck.add(pos)
-        #             # if king is northwest of bishop
-        #             elif (kingRank > oppRank and kingFile < oppFile):
-        #                 for pos in range(oppPos, kingPos, 7):
-        #                     self.lineOfCheck.add(pos)
-        #         if oppPiece.type in ("r","q"):
-        #             # if rook or queen is attacking, need vertical and horz squares
-        #             # if king is to the right of attacking piece:
-        #             if (kingRank == oppRank and kingFile > oppFile):
-        #                 for pos in range(oppPos, kingPos, 1):
-        #                     self.lineOfCheck.add(pos)
-        #             # if king is to the left of attacking piece:
-        #             elif (kingRank == oppRank and kingFile < oppFile):
-        #                 for pos in range(oppPos, kingPos, -1):
-        #                     self.lineOfCheck.add(pos)
-        #             # if king is above attacking piece:
-        #             elif (kingRank > oppRank and kingFile == oppFile):
-        #                 for pos in range(oppPos, kingPos, 8):
-        #                     self.lineOfCheck.add(pos)
-        #             # if king is below attacking piece:
-        #             elif (kingRank < oppRank and kingFile == oppFile):
-        #                 for pos in range(oppPos, kingPos, -8):
-        #                     self.lineOfCheck.add(pos)
-        # else:
-        #     self.inCheck = False
+        if kingPos in self.checkDict:
+            print(color, "is in check")
+            self.inCheck = True
+            # loop through each line of check (max 2, usually 1)
+            for i in range(len(self.checkDict[kingPos])):
+                # get the piece that's attacking
+                oppPiece = self.checkDict[kingPos][i]
+                oppPos = oppPiece.position
+                oppRank, oppFile = piece.getRankFile(oppPiece.position)
+                if oppPiece.type in ("p", "n"):
+                    # if pawn or knight is attacking, you can only take the pawn
+                    # therefore line of check is just the piece's position
+                    self.lineOfCheck.add(oppPiece.position)
+                elif oppPiece.type in ("b", "q"):
+                    # if bishop is attacking, we need all the diagonal squares
+                    # if king is northeast of bishop
+                    if (kingRank > oppRank and kingFile > oppFile):
+                        for pos in range(oppPos, kingPos, 9):
+                            self.lineOfCheck.add(pos)
+                    # if king is southeast of bishop
+                    elif (kingRank < oppRank and kingFile > oppFile):
+                        for pos in range(oppPos, kingPos, -7):
+                            self.lineOfCheck.add(pos)
+                    # if king is southwest of bishop
+                    elif (kingRank < oppRank and kingFile < oppFile):
+                        for pos in range(oppPos, kingPos, -9):
+                            self.lineOfCheck.add(pos)
+                    # if king is northwest of bishop
+                    elif (kingRank > oppRank and kingFile < oppFile):
+                        for pos in range(oppPos, kingPos, 7):
+                            self.lineOfCheck.add(pos)
+                if oppPiece.type in ("r","q"):
+                    # if rook or queen is attacking, need vertical and horz squares
+                    # if king is to the right of attacking piece:
+                    if (kingRank == oppRank and kingFile > oppFile):
+                        for pos in range(oppPos, kingPos, 1):
+                            self.lineOfCheck.add(pos)
+                    # if king is to the left of attacking piece:
+                    elif (kingRank == oppRank and kingFile < oppFile):
+                        for pos in range(oppPos, kingPos, -1):
+                            self.lineOfCheck.add(pos)
+                    # if king is above attacking piece:
+                    elif (kingRank > oppRank and kingFile == oppFile):
+                        for pos in range(oppPos, kingPos, 8):
+                            self.lineOfCheck.add(pos)
+                    # if king is below attacking piece:
+                    elif (kingRank < oppRank and kingFile == oppFile):
+                        for pos in range(oppPos, kingPos, -8):
+                            self.lineOfCheck.add(pos)
+        else:
+            self.inCheck = False
 
     # loadpmoves
     # loads pawn moves for all pawns
@@ -250,6 +258,7 @@ class Board:
             if ((abs(fileOrigin - file) in [1,2]) and (0 <= takePos <= 64)):
                 # check if piece exists there with a different color
                 canMove = (self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)
+                print("position is ", pos, "can move is ", canMove, "self.incheck is ", self.inCheck)
                 if canMove:
                     if (takePos in self.pieceList):
                         if (pos not in self.pinnedPieces and self.pieceList[takePos].color != knight.color):
@@ -259,6 +268,8 @@ class Board:
                     else:
                         if pos not in self.pinnedPieces:
                             self.addMove(knight, takePos)
+                        else:
+                            self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
 
     # loadSlidingMoves
     # loads moves for queen bishop and rook
@@ -284,6 +295,7 @@ class Board:
             posInBetween = -1
             firstAdd = True
             for takePos in range(startList[i], endList[i], incList[i]):
+                # if you're in check and can take the piece, or you are not in check
                 checkRestriction = ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
                 # if you're not pinned, or you're pinned but you can take the pinned piece
                 pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
@@ -401,6 +413,7 @@ class Board:
         self.moveDict.clear()
         # generate moves for other side
         self.generateMoves(self.turn)
+        print("its ", self.turn, "turn, and is he in check? : ", self.inCheck)
 
     def revertMove(self):
         if self.moveCounter != 0:
@@ -479,6 +492,12 @@ class fen():
                 piece = copy(self.PIECES_DICT[s])  # IMPORTANT: generate a COPY of the object to avoid overwrite issues!
                 piece.setPos(position)
                 self.pieces[position] = piece
+
+                if piece.type == "k" and piece.color == "w":
+                    self.wKing = piece.position
+                elif piece.type == "k" and piece.color == "b":
+                    self.bKing = piece.position
+
                 file += 1
         for s in splitfen[1]:  # Toggle turns
             self.Turn = 'w' if s == 'w' else 'b'
@@ -492,7 +511,7 @@ class fen():
         self.MovesSinceLastPawn = int(splitfen[4])  # determine moves since last pawn move (for 50-move rule)
         self.MoveNumber = int(splitfen[5])  # determine move number
 
-        return (self.pieces, self.Turn, self.CastlingsAllowed, self.EnPassantSquare, self.MovesSinceLastPawn, self.MoveNumber)
+        return (self.pieces, self.Turn, self.CastlingsAllowed, self.EnPassantSquare, self.MovesSinceLastPawn, self.MoveNumber, {"w": self.wKing, "b" : self.bKing})
 
 # class fen
 ###################################################################
