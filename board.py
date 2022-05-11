@@ -35,7 +35,8 @@ class Board:
     # list of moves that has happened so far:
     moveList = []
     # start with this FEN
-    FEN = "q6k/1r6/8/8/1B1K1N2/8/8/8 w - - 0 1"
+    FEN = "7q/8/4k3/8/8/8/2Q5/3K4 w - - 0 1"
+    # FEN = DEFAULTFEN
     # tracks taken pieces to use in revertmove
     # maps the move number to a piece that was taken on that move
     takenPieces = {}
@@ -209,7 +210,6 @@ class Board:
         # now lets calculate taking a piece
         # check if there is a pawn diagonal from the current pawn and opposite color
         for takePos in [pos + 9 * col, pos + 7 * col]:
-            print(takePos)
             # if you're in check and can take the piece, or you are not in check
             checkRestriction = (self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)
             # if you're not pinned, or you're pinned but you can take the pinned piece
@@ -228,12 +228,9 @@ class Board:
                     self.addMove(pawn, takePos)
             # if there is no piece on a square, see if we can move there
             else:
-                # if you are not pinned and not in check you can move to this empty square
-                if pos not in self.pinnedPieces and checkRestriction:
-                    self.addMove(pawn, takePos)
+                # if there is no piece on this square, you cannot take diagonally
                 # if you are pinned or you are in check, you still need to defend these squares
-                else:
-                    self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)       
+                self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)       
         #######################################################################
         # calculating en passant moves:
         # parameters for an en passant move is:
@@ -265,7 +262,10 @@ class Board:
                     # check if this happens on rank 5 (for white) and rank 4 (for black):
                     # ((pos // 8 == 4 and pawn.color == "w") or (pos // 8 == 3 and pawn.color == "b"))
             ):
-                if ((self.inCheck and (otherPiecePos + 8 * col in self.lineOfCheck)) or (not self.inCheck)):
+                print(self.lineOfCheck)
+                print("otherpiece pos is ", otherPiecePos)
+                print(otherPiecePos + 8 * col, "pos is ", pos)
+                if ((self.inCheck and (otherPiecePos in self.lineOfCheck)) or (not self.inCheck)):
                     self.addMove(pawn, otherPiecePos + 8 * col)
                     self.enpassantPawnPos = otherPiecePos
                     print("EN CHOSSANT")
@@ -436,15 +436,17 @@ class Board:
         else:
             self.movesSinceLastPawn = 0
 
-        # after you move, clear all the dicts
-        self.moveDict.clear()
+
         self.checkDict.clear()
         self.whiteReach.clear()
         self.blackReach.clear()
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
-        # generate new moves for the same side after they turned, to see if the other side is in check
         self.pinnedPieces.clear()
+        self.lineOfCheck.clear()
+        self.isInCheck(self.turn)
+        self.moveDict.clear()
+        # generate new moves for the same side after they turned, to see if the other side is in check
         self.generateMoves(self.turn)
         # switch the move
         self.turn = 'w' if self.turn == 'b' else 'b'
