@@ -1,8 +1,5 @@
 # board.py
 # responsible for boad structure and operations
-from tabnanny import check
-from turtle import bk
-from numpy import take
 import pygame
 from copy import copy
 import piece
@@ -34,7 +31,7 @@ class Board:
     # list of moves that has happened so far:
     moveList = []
     # start with this FEN
-    FEN = "q7/8/8/8/3K4/8/8/k7 w - - 0 1"
+    FEN = "8/8/8/4k3/1q2P2K/8/8/8 w - - 0 1"
     # tracks taken pieces to use in revertmove
     # maps the move number to a piece that was taken on that move
     takenPieces = {}
@@ -80,11 +77,11 @@ class Board:
         for piece in self.pieceList.values():
             if piece.color == turn:
                 # check if a double check has happened, only the king can move then
-                if self.kings[piece.color] in self.checkDict:
-                    if len(self.checkDict[self.kings[piece.color]]) > 1:
+                if self.kings[turn] in self.checkDict:
+                    if len(self.checkDict[self.kings[turn]]) > 1:
                         print("double check")
-                        self.loadkmoves(piece)
-                        break
+                        # self.loadkmoves(piece)
+                        # break
                 if piece.type == 'p':
                     self.loadpmoves(piece)
                 elif piece.type == "n":
@@ -110,7 +107,6 @@ class Board:
     # function for checking if king is in check in O(1) time
     # updates the line of check set efficiently 
     def isInCheck(self, color):
-        pass
         # check if position of the king is in the legal moves
         # if it is, it updates the line of check
 
@@ -199,16 +195,31 @@ class Board:
         # now lets calculate taking a piece
         # check if there is a pawn diagonal from the current pawn and opposite color
         for takePos in [pos + 9 * col, pos + 7 * col]:
-            canMove = (abs((takePos % 8) - (pos % 8)) == 1) and ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
-            if canMove:
-                # if you're pinned and you cannot attack the piece, then you have no moves with this pawn
-                if takePos in self.pieceList:
-                    if (pos not in self.pinnedPieces and self.pieceList[takePos].color != pawn.color) or (self.pinnedPieces[pos] == takePos):
-                        self.addMove(pawn, takePos)
-                    else:
-                        self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)
-                else:
+            print(takePos)
+            # if you're in check and can take the piece, or you are not in check
+            checkRestriction = (self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)
+            # if you're not pinned, or you're pinned but you can take the pinned piece
+            pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
+
+            # for each square that we are checking, there is either a piece on that square or not.
+            # first lets check if there is a piece there:
+            if takePos in self.pieceList:
+                # now there are two cases, either there is a same color piece here, or opponent
+                # if there is a same color piece here, make sure this piece is protecting that
+                if self.pieceList[takePos].color == pawn.color:
                     self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)
+                # if there is a different colored piece on this square, see if we can take it:
+                # you must be not pinned, and pass check restriction
+                elif pinRestriction and checkRestriction:
+                    self.addMove(pawn, takePos)
+            # if there is no piece on a square, see if we can move there
+            else:
+                # if you are not pinned and not in check you can move to this empty square
+                if pos not in self.pinnedPieces and checkRestriction:
+                    self.addMove(pawn, takePos)
+                # if you are pinned or you are in check, you still need to defend these squares
+                else:
+                    self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)       
         #######################################################################
         # calculating en passant moves:
         # parameters for an en passant move is:
@@ -258,20 +269,27 @@ class Board:
             file = takePos % 8
             # difference of files must be 1 or 2 to be a valid knight move
             if ((abs(fileOrigin - file) in [1,2]) and (0 <= takePos <= 64)):
-                # check if piece exists there with a different color
-                canMove = (self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)
-                print("position is ", pos, "can move is ", canMove, "self.incheck is ", self.inCheck)
-                if canMove:
-                    if (takePos in self.pieceList):
-                        if (pos not in self.pinnedPieces and self.pieceList[takePos].color != knight.color):
-                                self.addMove(knight, takePos)
-                        elif self.pieceList[takePos].color == knight.color:
-                                self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
+                # if you're in check and can take the piece, or you are not in check
+                checkRestriction = (self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)
+                # for each square that we are checking, there is either a piece on that square or not.
+                # first lets check if there is a piece there:
+                if takePos in self.pieceList:
+                    # now there are two cases, either there is a same color piece here, or opponent
+                    # if there is a same color piece here, make sure this piece is protecting that
+                    if self.pieceList[takePos].color == knight.color:
+                        self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
+                    # if there is a different colored piece on this square, see if we can take it:
+                    # you must be not pinned, and pass check restriction
+                    elif pos not in self.pinnedPieces and checkRestriction:
+                        self.addMove(knight, takePos)
+                # if there is no piece on a square, see if we can move there
+                else:
+                    # if you are not pinned and not in check you can move to this empty square
+                    if pos not in self.pinnedPieces and checkRestriction:
+                        self.addMove(knight, takePos)
+                    # if you are pinned or you are in check, you still need to defend these squares
                     else:
-                        if pos not in self.pinnedPieces:
-                            self.addMove(knight, takePos)
-                        else:
-                            self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
+                        self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
 
     # loadSlidingMoves
     # loads moves for queen bishop and rook
@@ -303,7 +321,7 @@ class Board:
                 pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
 
                 # for each square that we are checking, there is either a piece on that square or not.
-                # first lets check if there is a square there:
+                # first lets check if there is a peice there:
                 if takePos in self.pieceList:
                     # now there are two cases, either there is a same color piece here, or opponent
                     # if there is a same color piece here, make sure this piece is protecting that, then break because rest squares in that dir don't matter
@@ -356,7 +374,6 @@ class Board:
                 elif self.pieceList[takePos].color == king.color:
                         self.whiteLegalMoves[takePos].append(king) if king.color == "w" else self.blackLegalMoves[takePos].append(king)
 
-
     # makeMove
     # useful for moving a piece and updating our directory accordingly
     def makeMove(self, origin, dest):
@@ -399,11 +416,11 @@ class Board:
         if (piece.type == "k"):
             self.kings[piece.color] = piece.position
 
-        # # check how many moves since last pawn move
-        # if piece.type != 'p':
-        #     self.MovesSinceLastPawn += 1 if self.turn == 'b' else 0
-        # else:
-        #     self.MovesSinceLastPawn = 0
+        # check how many moves since last pawn move
+        if piece.type != 'p':
+            self.movesSinceLastPawn += 1 if self.turn == 'b' else 0
+        else:
+            self.movesSinceLastPawn = 0
 
         # after you move, clear all the dicts
         self.moveDict.clear()
