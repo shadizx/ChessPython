@@ -129,11 +129,11 @@ def main():
                     # print("kings is ", str(BOARD.kings))
                     # print("line of check is ", BOARD.lineOfCheck)
                     # if BOARD.turn == "w":
-                    #     print("white legal moves is ", str(BOARD.whiteLegalMoves))
+                    #     print("white legal moves is ", str(BOARD.whiteReach))
                     # else:
-                    #     print("black legal moves is ", str(BOARD.blackLegalMoves))
+                    #     print("black legal moves is ", str(BOARD.blackReach))
 
-                    # print(str(BOARD.pinnedPieces.keys()))
+                    # print(str(BOARD.pinnedPieces))
                     # print(str(BOARD.whiteLegalMoves.keys()))
                     # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
 
