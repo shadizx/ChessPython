@@ -262,9 +262,6 @@ class Board:
                     # check if this happens on rank 5 (for white) and rank 4 (for black):
                     # ((pos // 8 == 4 and pawn.color == "w") or (pos // 8 == 3 and pawn.color == "b"))
             ):
-                print(self.lineOfCheck)
-                print("otherpiece pos is ", otherPiecePos)
-                print(otherPiecePos + 8 * col, "pos is ", pos)
                 if ((self.inCheck and (otherPiecePos in self.lineOfCheck)) or (not self.inCheck)):
                     self.addMove(pawn, otherPiecePos + 8 * col)
                     self.enpassantPawnPos = otherPiecePos
@@ -377,6 +374,8 @@ class Board:
     def loadkmoves(self, king):
         pos = king.position
         #check squares around king
+        # print("##################################################################################################")
+        # print("my turn is ", king.color, "my pos is ", pos, "whitelegalmoves is ", str(self.whiteLegalMoves), "blacklegalmoves is ", str(self.blackLegalMoves))
         for takePos in [pos + 8, pos - 8, pos + 9, pos - 9, pos + 1, pos - 1, pos + 7, pos -7]:
             # check if takePos is in the right constraints
             # check if takePos file is different by pos rank by only 1
@@ -430,6 +429,7 @@ class Board:
         if (piece.type == "k"):
             self.kings[piece.color] = piece.position
 
+
         # check how many moves since last pawn move
         if piece.type != 'p':
             self.movesSinceLastPawn += 1 if self.turn == 'b' else 0
@@ -440,8 +440,12 @@ class Board:
         self.checkDict.clear()
         self.whiteReach.clear()
         self.blackReach.clear()
-        self.whiteLegalMoves.clear()
-        self.blackLegalMoves.clear()
+
+        if piece.color == "w":
+            self.whiteLegalMoves.clear()
+        else:
+            self.blackLegalMoves.clear()
+            
         self.pinnedPieces.clear()
         self.lineOfCheck.clear()
         self.isInCheck(self.turn)
@@ -452,6 +456,11 @@ class Board:
         self.turn = 'w' if self.turn == 'b' else 'b'
         # clear line of check and see if other side is in check
         self.lineOfCheck.clear()
+
+        if piece.color == "w":
+            self.whiteLegalMoves.clear()
+        else:
+            self.blackLegalMoves.clear()
         self.isInCheck(self.turn)
         self.moveDict.clear()
         # generate moves for other side
