@@ -1,5 +1,6 @@
 # game.py
 # responsible for running the main program
+from tracemalloc import start
 import pygame
 import piece
 import board
@@ -19,12 +20,9 @@ circlex = 40
 circley = -40
 circler = 20
 # available legal moves
-movesavail = [] # why did we need this again?
-turn_dict = {'w': (0, "white", "black"), 'b': (1, "black", "white")} # (bin, self, opponent) cosmetic, won't really need this later
-##############################################################
-# piece BOARD
-# start of with BOARD of starting pieces
-# BOARD = BOARD
+legalCircles = []
+##################################################################
+
 ###################################################################
 # drawcircle
 def circlemoves(surface, color, center, radius):
@@ -37,19 +35,17 @@ def circlemoves(surface, color, center, radius):
 # useful for drawing the board
 def drawboard():
     BOARD.draw()
-    for m in movesavail:
+    for m in legalCircles:
         win.blit(m[0], m[1])
 ###################################################################
 # drawpieces()
 # useful for drawing the pieces
 def drawpieces():
     for i in BOARD.pieceList.values():
-        if i is not None:
-            i.draw()
-
+        i.draw()
 ###################################################################
 # getmpos
-# getting the    of the mouse upon clicking
+# getting the position of the mouse upon clicking
 def getmpos():
     pos = pygame.mouse.get_pos()
     x = pos[0] // 80
@@ -58,16 +54,16 @@ def getmpos():
 ###################################################################
 # printmoves
 # returns the location of the piece clicked, null if no piece has been clicked
-def printmoves(p, legalMoves):
-    #refresh movesavail:
-    movesavail.clear()
+def printmoves(p):
+    #refresh legalCircles:
+    legalCircles.clear()
     # loop through legal moves to show each legal move
-    if p.position in legalMoves:
-        for move in legalMoves[p.position]:
+    if p in BOARD.moveDict:
+        for move in BOARD.moveDict[p]:
             #load the legal moves on the board
             y, x = piece.getRankFile(move)
             circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)  # TODO: check this
-            movesavail.append(circleimg)
+            legalCircles.append(circleimg)
 ###################################################################
 # piece2mouse
 # moves a piece image location to the center of the mouse
@@ -92,16 +88,29 @@ def piecedisappear(p):
     drawpieces()
     sqtobecleared.draw()   
 ###################################################################
+# animateMove()
+# does the animation for making a move
+def animateMove(p, pos):
+    if p in BOARD.moveDict and p.color == BOARD.turn:
+            for move in BOARD.moveDict[p]:
+                if (move == pos): # if a legal move position is the same as pos
+                    # MOVE THE PIECE
+                    BOARD.makeMove(p.position, move)
+                    # generate new moves for the new board
+                    legalCircles.clear()
+                    PIECECLICKED = False
+
+
+###################################################################
 # main driver
 def main():
     # running main window
     clock = pygame.time.Clock()
     run = True
-    legalMoves = BOARD.generateLegalMoves(BOARD.turn)
 
     refresh()
     PIECECLICKED = False
-#################################while loop####################################################
+################################# while loop ####################################################
     while run:
         clock.tick(fps)
         for event in pygame.event.get():
@@ -109,28 +118,54 @@ def main():
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # if left-clicked
+                    # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
+                    # print("\n\n######################################################################")
+                    # print("movedict is ", str(BOARD.moveDict))
+                    # print("turn is for ", BOARD.turn)
+                    # print("######################################################################")
+                    # print("checkdict is ", BOARD.checkDict)
+                    # print(BOARD.inCheck)
+                    # print("######################################################################")
+                    # print("kings is ", str(BOARD.kings))
+                    # print("line of check is ", BOARD.lineOfCheck)
+                    # if BOARD.turn == "w":
+                    #     print("white legal moves is ", str(BOARD.whiteLegalMoves))
+                    # else:
+                    #     print("black legal moves is ", str(BOARD.blackLegalMoves))
+
+                    # print(str(BOARD.pinnedPieces.keys()))
+                    # print(str(BOARD.whiteLegalMoves.keys()))
+                    # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
+
+                    # check if previously clicked on a piece to move the piece there
+                    # this way, we can drag and click to move pieces
                     #get mouse pos
                     xpos = getmpos()[0]
                     ypos = getmpos()[1]
                     pos = 8 * ypos + xpos
+                    
+                    if PIECECLICKED:
+                        animateMove(p, pos)
+                        
                     # check if there is a piece where the mouse has been clicked
                     if (pos in BOARD.pieceList):
                         PIECECLICKED = True
                         # grab the piece that is on that square
                         p = BOARD.pieceList[pos]
-                        # if p.color == BOARD.turn:
-                        # print moves:
-                        printmoves(p, legalMoves)
-                        # clear the old static piece
-                        piecedisappear(p)
-                        # get mouse position
-                        xloc = event.pos[0]
-                        yloc = event.pos[1]
-                        # need to check if mouse is going out of the window, then let go of piece
-                        piece2mouse(xloc, yloc, p)
-                    else:
-                        # if clicked on board, remove available moves and refresh board
-                        movesavail.clear()
+                        if p.color == BOARD.turn:
+                            # print moves:
+                            printmoves(p)
+                            # clear the old static piece
+                            piecedisappear(p)
+                            # get mouse position
+                            xloc = event.pos[0]
+                            yloc = event.pos[1]
+                            # need to check if mouse is going out of the window, then let go of piece
+                            piece2mouse(xloc, yloc, p)
+                    if (pos not in BOARD.pieceList) or (BOARD.pieceList[pos].color != BOARD.turn):
+                        # if clicked elsewhere, remove available moves and refresh board
+                        PIECECLICKED = False
+                        legalCircles.clear()
                         refresh()
             elif event.type == pygame.MOUSEBUTTONUP: # if mouse is unclicked
                 if event.button == 1:
@@ -140,30 +175,8 @@ def main():
                         y = getmpos()[1]
                         pos = 8 * y + x
                         
-                        # check if we can even move there:
-                        if p.position in legalMoves and p.color == BOARD.turn:
-                            for move in legalMoves[p.position]:
-                                if (move == pos): # if a legal move position is the same as pos
-                                    # MOVE THE PIECE
-                                    BOARD.makeMove(p.position, move)
-                                    # generate new moves for the new board
-                                    legalMoves = BOARD.generateLegalMoves(BOARD.turn)
-                                    movesavail.clear()
-                                    print("on move", BOARD.moveCounter)
-                                    print("move list is " + str(BOARD.moveList))
-                                    # TODO: make color changes upon check (optional)
-                                    for pos in BOARD.pieceList:
-                                        if BOARD.pieceList[pos].type == 'k' and BOARD.pieceList[pos].color == BOARD.turn:
-                                            kingpos = pos
-                                    if BOARD.squareIsThreatened(kingpos):
-                                        if len(legalMoves) == 0:
-                                            print(f"checkmate! {turn_dict[BOARD.turn][2]} wins!")
-                                        else:
-                                            print("check!")
-                                    elif len(legalMoves) == 0:
-                                        print("stalemate!")
+                        animateMove(p,pos)
                         refresh()
-                        PIECECLICKED = False
             elif pygame.mouse.get_pressed()[0] & PIECECLICKED: # while holding the piece
                 # make the piece dissapear from it's previous place:
                 piecedisappear(p)
@@ -174,25 +187,26 @@ def main():
                 if  xloc >= width - 1  or \
                     yloc >= height - 1 or \
                     xloc <= 1 or yloc <= 1:
-                        movesavail.clear()
+                        legalCircles.clear()
                         refresh()
                         break
                 else:
                     # move piece to mouse
                     piece2mouse(xloc, yloc, p)
             if event.type == pygame.KEYDOWN:
+                print("taken pieces is " + str(BOARD.takenPieces))
                 if event.key == pygame.K_LEFT:
                     BOARD.revertMove()
-                    # BOARD.generateMoves()
-                    movesavail.clear()
+                    legalCircles.clear()
                     refresh()
+                    print(BOARD.unmadeMoves)
                 elif event.key == pygame.K_RIGHT:
                     if (len(BOARD.unmadeMoves) > 0):
                             BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1])
                             BOARD.unmadeMoves.pop()
-                            # BOARD.generateMoves()
-                            movesavail.clear()
+                            legalCircles.clear()
                             refresh()
+                            print(BOARD.unmadeMoves)
 
 #################################while loop####################################################
         
