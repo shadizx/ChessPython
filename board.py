@@ -28,43 +28,60 @@ takeSound = pygame.mixer.Sound("sounds/capture.ogg")
 # inherits from fen, responsible for board square colors
 class Board:
 
-    # holds boardcolors
-    boardColors = []
-    # dict that maps a piece to the legal moves of that piece
-    moveDict = defaultdict(lambda: [])
-    # list of moves that has happened so far:
-    moveList = []
     # start with this FEN
-    FEN = "k7/8/1b6/8/5n2/8/q7/4K2R w K - 0 1"
+    FEN = "k7/8/1p6/8/5r2/8/5P/4K2R w K - 0 1"
     # FEN = DEFAULTFEN
-    # tracks taken pieces to use in revertmove
-    # maps the move number to a piece that was taken on that move
-    takenPieces = {}
-    # tracks number of moves that have been played
-    moveCounter = 0
+
+    # holds boardcolors ( the squares )
+    boardColors = []
+
+    # dict that maps a piece to the legal moves of that piece
+    # format: {p:[16,24]} - means a piece on square 8 can move to square 16 and 24
+    moveDict = defaultdict(lambda: [])
+
+    # list of moves that has happened so far:
+    # used for going back a move, format is [(12, 20)] - means piece went from square 12 to square 20
+    moveList = []
     # tracks unmade moves to then go forward with arrow key
     unmadeMoves = []
+
+    # tracks taken pieces to use in revertmove
+    # maps the move number to a piece that was taken on that move
+    # format" {5, q} means on move 5 a queen was taken
+    takenPieces = {}
+
+    # tracks number of moves that have been played
+    moveCounter = 0
+    
     # to check if enpassant is available
     enpassantPawnPos = -1
+
     # dictionary that maps a position that a piece(s) can go to, to the pieces that can go there
     # format: {43, [p,k,r]}
     # this means that the pawn king and rook can all go to square 43
     checkDict = defaultdict(lambda: [])
+
     # dict that tracks the kings position
     # format: {"w" : 4, "b" : 60} means white king is on square 4 and black is on 60
     kings = {}
 
     # line of check set
     # set that contains the line of check (positions)
+    # format: (0,1,2,3) means that the side in check must cover one of these squares to block the check
     lineOfCheck = set()
+
     # pinnedPieces dict
-    # contains the pinned pieces. key is the pinnned piece pos, and value is the pinning piece pos 
+    # contains the pinned pieces. key is the pinnned piece pos, and value is the pinning piece pos
+    # format: {11: 32} means a piece on square 11 is pinned by a piece on square 32
     pinnedPieces = defaultdict(lambda: [])
+
     # incheck boolean set to check if king is in check
     inCheck = False
+
     # two dicts for where each piece can reach (including its own pieces)
     whiteReach = defaultdict(lambda: [])
     blackReach = defaultdict(lambda: [])
+
     # two sets for strictly the entire white and black moves
     whiteLegalMoves = set()
     blackLegalMoves = set()
@@ -375,9 +392,9 @@ class Board:
     def loadkmoves(self, king):
         pos = king.position
         #check squares around king
-        print("##################################################################################################")
-        print("my turn is ", king.color, "my pos is ", pos, "whitelegalmoves is ", str(self.whiteLegalMoves), "blacklegalmoves is ", str(self.blackLegalMoves))
-        print("\n\n")
+        # print("##################################################################################################")
+        # print("my turn is ", king.color, "my pos is ", pos, "whitelegalmoves is ", str(self.whiteLegalMoves), "blacklegalmoves is ", str(self.blackLegalMoves))
+        # print("\n\n")
         for takePos in [pos + 8, pos - 8, pos + 9, pos - 9, pos + 1, pos - 1, pos + 7, pos -7]:
             # check if takePos is in the right constraints
             # check if takePos file is different by pos rank by only 1
@@ -398,6 +415,7 @@ class Board:
             # sqaures of short castles are:
             shortCastleSquares = set({pos + 1, pos + 2})
             longCastleSquares  = set({pos - 1, pos - 2, pos - 3})
+            longKingRoute = set({pos - 1, pos - 2})
 
             shortRookPos, longRookPos = -1,-1
             if pos + 3 in self.pieceList:
@@ -429,7 +447,7 @@ class Board:
                 # your king cannot be in check
                 (self.kings[king.color] not in self.checkDict) and
                 # the squares in between castle can't be attackable
-                (len(longCastleSquares.intersection(self.whiteLegalMoves)) == 0 if king.color == "b" else len(longCastleSquares.intersection(self.blackLegalMoves)) == 0)
+                (len(longKingRoute.intersection(self.whiteLegalMoves)) == 0 if king.color == "b" else len(longKingRoute.intersection(self.blackLegalMoves)) == 0)
             ):
                 self.addMove(king, pos - 2)
 
