@@ -35,7 +35,7 @@ class Board:
     # list of moves that has happened so far:
     moveList = []
     # start with this FEN
-    FEN = "7q/8/4k3/8/8/8/2Q5/3K4 w - - 0 1"
+    FEN = "k7/8/1b6/8/5n2/8/q7/4K2R w K - 0 1"
     # FEN = DEFAULTFEN
     # tracks taken pieces to use in revertmove
     # maps the move number to a piece that was taken on that move
@@ -107,8 +107,8 @@ class Board:
         if ((turn == "w" and len(self.whiteLegalMoves) == 0) or (turn == "b" and len(self.blackLegalMoves) == 0)):
             print("Checkmate!") if self.kings[turn] in self.checkDict else print("Stalemate!")
 
-
-    # adds move to both moveDict and checkdict
+    # addmove
+    # adds a legal move to the appropriate dictionaries
     def addMove(self, piece, dest):
         self.moveDict[piece].append(dest)
         if dest in self.pieceList:
@@ -119,6 +119,7 @@ class Board:
         else:
             self.blackReach[dest].append(piece)
             self.blackLegalMoves.add(dest)
+
     # function for checking if king is in check in O(1) time
     # updates the line of check set efficiently 
     def isInCheck(self, color):
@@ -374,8 +375,9 @@ class Board:
     def loadkmoves(self, king):
         pos = king.position
         #check squares around king
-        # print("##################################################################################################")
-        # print("my turn is ", king.color, "my pos is ", pos, "whitelegalmoves is ", str(self.whiteLegalMoves), "blacklegalmoves is ", str(self.blackLegalMoves))
+        print("##################################################################################################")
+        print("my turn is ", king.color, "my pos is ", pos, "whitelegalmoves is ", str(self.whiteLegalMoves), "blacklegalmoves is ", str(self.blackLegalMoves))
+        print("\n\n")
         for takePos in [pos + 8, pos - 8, pos + 9, pos - 9, pos + 1, pos - 1, pos + 7, pos -7]:
             # check if takePos is in the right constraints
             # check if takePos file is different by pos rank by only 1
@@ -386,6 +388,50 @@ class Board:
                         self.addMove(king, takePos)
                 elif self.pieceList[takePos].color == king.color:
                         self.whiteReach[takePos].append(king) if king.color == "w" else self.blackReach[takePos].append(king)
+        # now lets check for castles
+        # calculate short castle first
+        # restrictions for castling are:
+        #   1) king and rook has not moved
+        #   2) the line of squares of castling should be empty and not attackable
+        if king.hasMoved == False:
+            # check short castle
+            # sqaures of short castles are:
+            shortCastleSquares = set({pos + 1, pos + 2})
+            longCastleSquares  = set({pos - 1, pos - 2, pos - 3})
+
+            shortRookPos, longRookPos = -1,-1
+            if pos + 3 in self.pieceList:
+                shortCastleRook = self.pieceList[pos + 3]
+                shortRookPos = pos + 3
+            elif pos - 4 in self.pieceList:
+                longCastleRook = self.pieceList[pos - 4]
+                longRookPos = pos - 4
+
+            # check for shortcastle
+            if (
+                # if there are no pieces in the range of shortcastlesquares:
+                len(shortCastleSquares.intersection(self.pieceList)) == 0 and
+                # check if rook is where its supposed to be with the right color and it hasn't moved
+                shortRookPos in self.pieceList and shortCastleRook.type == "r" and shortCastleRook.color == king.color and shortCastleRook.hasMoved == False and
+                # your king cannot be in check
+                (self.kings[king.color] not in self.checkDict) and
+                # the squares in between castle can't be attackable
+                (len(shortCastleSquares.intersection(self.whiteLegalMoves)) == 0 if king.color == "b" else len(shortCastleSquares.intersection(self.blackLegalMoves)) == 0)
+            ):
+                self.addMove(king, pos + 2)
+            
+            # check for long castle
+            if (
+                # if there are no pieces in the range of longcastlesquares
+                len(longCastleSquares.intersection(self.pieceList)) == 0 and
+                # check if rook is where its supposed to be with the right color and it hasn't moved
+                longRookPos in self.pieceList and longCastleRook.type == "r" and longCastleRook.color == king.color and longCastleRook.hasMoved == False and
+                # your king cannot be in check
+                (self.kings[king.color] not in self.checkDict) and
+                # the squares in between castle can't be attackable
+                (len(longCastleSquares.intersection(self.whiteLegalMoves)) == 0 if king.color == "b" else len(longCastleSquares.intersection(self.blackLegalMoves)) == 0)
+            ):
+                self.addMove(king, pos - 2)
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
@@ -425,10 +471,34 @@ class Board:
         # add the move to moveList
         self.moveList.append((origin, dest))
 
+        # check if its a rook or king to update that they have been moved and no longer to castle:
+        if (piece.type in ("k", "r")):
+            piece.hasMoved = True
+
         # check if its a king to track the position of it
         if (piece.type == "k"):
             self.kings[piece.color] = piece.position
-
+            # check if the king wants to castle to move the rook as well
+            if dest - origin == 2:
+                # this means that the king wants to short castle
+                # get position of rook
+                rook = self.pieceList[origin + 3]
+                # move the piece to its destination
+                rook.setPos(origin + 1)
+                # update the position of the piece in pieceList
+                self.pieceList[origin + 1] = self.pieceList.pop(origin + 3)
+                # update hasmoved of rook
+                rook.hasMoved = True
+            elif dest - origin == -2:
+                # this means that the king wants to long castle
+                # get position of rook
+                rook = self.pieceList[origin - 4]
+                # move the piece to its destination
+                rook.setPos(origin - 1)
+                # update the position of the piece in pieceList
+                self.pieceList[origin - 1] = self.pieceList.pop(origin - 4)
+                # update hasmoved of rook
+                rook.hasMoved = True
 
         # check how many moves since last pawn move
         if piece.type != 'p':
@@ -436,32 +506,27 @@ class Board:
         else:
             self.movesSinceLastPawn = 0
 
-
         self.checkDict.clear()
         self.whiteReach.clear()
         self.blackReach.clear()
-
-        if piece.color == "w":
-            self.whiteLegalMoves.clear()
-        else:
-            self.blackLegalMoves.clear()
-            
         self.pinnedPieces.clear()
+        self.moveDict.clear()
+        self.whiteLegalMoves.clear()
+        self.blackLegalMoves.clear()
+
         self.lineOfCheck.clear()
         self.isInCheck(self.turn)
-        self.moveDict.clear()
         # generate new moves for the same side after they turned, to see if the other side is in check
         self.generateMoves(self.turn)
         # switch the move
         self.turn = 'w' if self.turn == 'b' else 'b'
+
+        # self.whiteLegalMoves.clear()
+        # self.blackLegalMoves.clear()
         # clear line of check and see if other side is in check
         self.lineOfCheck.clear()
-
-        if piece.color == "w":
-            self.whiteLegalMoves.clear()
-        else:
-            self.blackLegalMoves.clear()
         self.isInCheck(self.turn)
+        
         self.moveDict.clear()
         # generate moves for other side
         self.generateMoves(self.turn)
