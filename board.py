@@ -19,6 +19,10 @@ DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 pygame.mixer.init()
 moveSound = pygame.mixer.Sound("sounds/move.ogg")
 takeSound = pygame.mixer.Sound("sounds/capture.ogg")
+# mateSound = pygame.mixer.Sound("sounds/mate.ogg")
+# drawSound = pygame.mixer.Sound("sounds/draw.ogg")
+# loseSound = pygame.mixer.Sound("sounds/defeat.ogg")
+# startSound = pygame.mixer.Sound("sounds/welcome.ogg")
 ###################################################################
 # class Board
 # inherits from fen, responsible for board square colors
@@ -31,7 +35,7 @@ class Board:
     # list of moves that has happened so far:
     moveList = []
     # start with this FEN
-    FEN = "8/8/8/4k3/1q2P2K/8/8/8 w - - 0 1"
+    FEN = "q6k/1r6/8/8/1B1K1N2/8/8/8 w - - 0 1"
     # tracks taken pieces to use in revertmove
     # maps the move number to a piece that was taken on that move
     takenPieces = {}
@@ -57,9 +61,12 @@ class Board:
     pinnedPieces = defaultdict(lambda: [])
     # incheck boolean set to check if king is in check
     inCheck = False
-    # two dicts for legal moves of white and black
-    whiteLegalMoves = defaultdict(lambda: [])
-    blackLegalMoves = defaultdict(lambda: [])
+    # two dicts for where each piece can reach (including its own pieces)
+    whiteReach = defaultdict(lambda: [])
+    blackReach = defaultdict(lambda: [])
+    # two sets for strictly the entire white and black moves
+    whiteLegalMoves = set()
+    blackLegalMoves = set()
 
     def __init__(self):
         self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber, self.kings = fen(self.FEN).LoadFromFEN()
@@ -80,8 +87,8 @@ class Board:
                 if self.kings[turn] in self.checkDict:
                     if len(self.checkDict[self.kings[turn]]) > 1:
                         print("double check")
-                        # self.loadkmoves(piece)
-                        # break
+                        self.loadkmoves(self.pieceList[self.kings[turn]])
+                        break
                 if piece.type == 'p':
                     self.loadpmoves(piece)
                 elif piece.type == "n":
@@ -93,6 +100,12 @@ class Board:
                     self.loadSlidingMoves(piece, 1)
                 elif piece.type == "k":
                     self.loadkmoves(piece)
+                
+        # now see if a side is in checkmate
+        # this happens when you're in check and have no legal moves to make
+        if ((turn == "w" and len(self.whiteLegalMoves) == 0) or (turn == "b" and len(self.blackLegalMoves) == 0)):
+            print("Checkmate!") if self.kings[turn] in self.checkDict else print("Stalemate!")
+
 
     # adds move to both moveDict and checkdict
     def addMove(self, piece, dest):
@@ -100,10 +113,11 @@ class Board:
         if dest in self.pieceList:
             self.checkDict[dest].append(piece)
         if piece.color == "w":
-            self.whiteLegalMoves[dest].append(piece)
+            self.whiteReach[dest].append(piece)
+            self.whiteLegalMoves.add(dest)
         else:
-            self.blackLegalMoves[dest].append(piece)
-
+            self.blackReach[dest].append(piece)
+            self.blackLegalMoves.add(dest)
     # function for checking if king is in check in O(1) time
     # updates the line of check set efficiently 
     def isInCheck(self, color):
@@ -207,7 +221,7 @@ class Board:
                 # now there are two cases, either there is a same color piece here, or opponent
                 # if there is a same color piece here, make sure this piece is protecting that
                 if self.pieceList[takePos].color == pawn.color:
-                    self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)
+                    self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)
                 # if there is a different colored piece on this square, see if we can take it:
                 # you must be not pinned, and pass check restriction
                 elif pinRestriction and checkRestriction:
@@ -219,7 +233,7 @@ class Board:
                     self.addMove(pawn, takePos)
                 # if you are pinned or you are in check, you still need to defend these squares
                 else:
-                    self.whiteLegalMoves[takePos].append(pawn) if pawn.color == "w" else self.blackLegalMoves[takePos].append(pawn)       
+                    self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)       
         #######################################################################
         # calculating en passant moves:
         # parameters for an en passant move is:
@@ -277,7 +291,7 @@ class Board:
                     # now there are two cases, either there is a same color piece here, or opponent
                     # if there is a same color piece here, make sure this piece is protecting that
                     if self.pieceList[takePos].color == knight.color:
-                        self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
+                        self.whiteReach[takePos].append(knight) if knight.color == "w" else self.blackReach[takePos].append(knight)
                     # if there is a different colored piece on this square, see if we can take it:
                     # you must be not pinned, and pass check restriction
                     elif pos not in self.pinnedPieces and checkRestriction:
@@ -289,7 +303,7 @@ class Board:
                         self.addMove(knight, takePos)
                     # if you are pinned or you are in check, you still need to defend these squares
                     else:
-                        self.whiteLegalMoves[takePos].append(knight) if knight.color == "w" else self.blackLegalMoves[takePos].append(knight)
+                        self.whiteReach[takePos].append(knight) if knight.color == "w" else self.blackReach[takePos].append(knight)
 
     # loadSlidingMoves
     # loads moves for queen bishop and rook
@@ -326,7 +340,7 @@ class Board:
                     # now there are two cases, either there is a same color piece here, or opponent
                     # if there is a same color piece here, make sure this piece is protecting that, then break because rest squares in that dir don't matter
                     if self.pieceList[takePos].color == p.color:
-                        self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
+                        self.whiteReach[takePos].append(p) if p.color == "w" else self.blackReach[takePos].append(p)
                         break
                     # now check if there is an opponent piece on this square
                     # if this is the first opp piece, and we are not in check or pinned, then add this to our movedict
@@ -349,13 +363,13 @@ class Board:
                     if pinRestriction and checkRestriction:
                         self.addMove(p, takePos)
                     else:
-                        self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
+                        self.whiteReach[takePos].append(p) if p.color == "w" else self.blackReach[takePos].append(p)
                 # if it's not your second add, and you are looking at an empty square, do nothing and keep going
                 # KEEP GOING UNLESS THE FIRSTADDED PIECE WAS A KING, TO GET SQUARES BEHIND KING
                 elif not firstAdd:
                     oppcol = "b" if p.color == "w" else "w"
                     if posInBetween == self.kings[oppcol]:
-                        self.whiteLegalMoves[takePos].append(p) if p.color == "w" else self.blackLegalMoves[takePos].append(p)
+                        self.whiteReach[takePos].append(p) if p.color == "w" else self.blackReach[takePos].append(p)
                         break    
 
     # loadkmoves
@@ -369,10 +383,10 @@ class Board:
             if ((0 <= takePos <= 63) and (abs(pos % 8 - takePos % 8) <= 1)):
                 if takePos not in self.pieceList or self.pieceList[takePos].color != king.color:
                     # check if the square that the king wants to go to is already being attacked
-                    if ((king.color == "w" and takePos not in self.blackLegalMoves) or (king.color == "b" and takePos not in self.whiteLegalMoves)):
+                    if ((king.color == "w" and takePos not in self.blackReach) or (king.color == "b" and takePos not in self.whiteReach)):
                         self.addMove(king, takePos)
                 elif self.pieceList[takePos].color == king.color:
-                        self.whiteLegalMoves[takePos].append(king) if king.color == "w" else self.blackLegalMoves[takePos].append(king)
+                        self.whiteReach[takePos].append(king) if king.color == "w" else self.blackReach[takePos].append(king)
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
@@ -425,6 +439,8 @@ class Board:
         # after you move, clear all the dicts
         self.moveDict.clear()
         self.checkDict.clear()
+        self.whiteReach.clear()
+        self.blackReach.clear()
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
         # generate new moves for the same side after they turned, to see if the other side is in check
@@ -438,7 +454,6 @@ class Board:
         self.moveDict.clear()
         # generate moves for other side
         self.generateMoves(self.turn)
-        print("its ", self.turn, "turn, and is he in check? : ", self.inCheck)
 
     def revertMove(self):
         if self.moveCounter != 0:

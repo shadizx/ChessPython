@@ -1,5 +1,6 @@
 # game.py
 # responsible for running the main program
+from tracemalloc import start
 import pygame
 import piece
 import board
@@ -135,7 +136,6 @@ def main():
                     # print(str(BOARD.pinnedPieces.keys()))
                     # print(str(BOARD.whiteLegalMoves.keys()))
                     # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
-
 
                     # check if previously clicked on a piece to move the piece there
                     # this way, we can drag and click to move pieces
