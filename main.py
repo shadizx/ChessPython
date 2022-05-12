@@ -23,8 +23,9 @@ legalCircles = []
 ##################################################################
 
 ###################################################################
-# drawcircle
-def circlemoves(surface, color, center, radius):
+# drawcircleS
+# draws circles for legal moves of a piece
+def drawCircles(surface, color, center, radius):
     place = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
     surf = pygame.Surface(place.size, pygame.SRCALPHA)
     pygame.draw.circle(surf, color, (radius, radius), radius)
@@ -61,7 +62,7 @@ def printmoves(p):
         for move in BOARD.moveDict[p]:
             #load the legal moves on the board
             y, x = piece.getRankFile(move)
-            circleimg = circlemoves(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)  # TODO: check this
+            circleimg = drawCircles(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)
             legalCircles.append(circleimg)
 ###################################################################
 # piece2mouse
@@ -98,8 +99,6 @@ def animateMove(p, pos):
                     # generate new moves for the new board
                     legalCircles.clear()
                     PIECECLICKED = False
-
-
 ###################################################################
 # main driver
 def main():
