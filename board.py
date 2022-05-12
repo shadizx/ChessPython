@@ -24,12 +24,31 @@ takeSound = pygame.mixer.Sound("sounds/capture.ogg")
 # loseSound = pygame.mixer.Sound("sounds/defeat.ogg")
 # startSound = pygame.mixer.Sound("sounds/welcome.ogg")
 ###################################################################
+
+################################BOARD ANIMATIONS###################################
+# shadeboard()
+def shadeBoard():
+    s = pygame.Surface((height,height))     # the size of your rect
+    s.set_alpha(160)                        # translucency level
+    s.fill((0, 0, 0, 127))                  # color of square
+    win.blit(s, (0,0))                      # (0,0) are the top-left coordinates
+###################################################################
+# getmpos
+# getting the position of the mouse upon clicking
+def getmpos():
+    pos = pygame.mouse.get_pos()
+    x = pos[0] // 80
+    y = 7 - pos[1] // 80
+    return (x,y)
+################################BOARD ANIMATIONS###################################
+
+###################################################################
 # class Board
 # inherits from fen, responsible for board square colors
 class Board:
 
     # start with this FEN
-    FEN = "k7/8/1p6/8/5r2/8/5P/4K2R w K - 0 1"
+    FEN = "k3n/3P/3b/8/8/p7/8/7K w - - 0 1"
     # FEN = DEFAULTFEN
 
     # holds boardcolors ( the squares )
@@ -75,6 +94,11 @@ class Board:
     # format: {11: 32} means a piece on square 11 is pinned by a piece on square 32
     pinnedPieces = defaultdict(lambda: [])
 
+
+    # line of pin set 
+    # contains the positions that is in the line of pin
+    lineOfPin = set()
+
     # incheck boolean set to check if king is in check
     inCheck = False
 
@@ -85,6 +109,9 @@ class Board:
     # two sets for strictly the entire white and black moves
     whiteLegalMoves = set()
     blackLegalMoves = set()
+
+    # see if board is in promotion state
+    promotionState = False
 
     def __init__(self):
         self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber, self.kings = fen(self.FEN).LoadFromFEN()
@@ -98,6 +125,11 @@ class Board:
     # generateMoves
     # useful for generating the moves of board
     def generateMoves(self, turn):
+        # check if there are only two kings remaining so it would be a draw
+        if len(self.pieceList) == 2 and self.kings["w"] in self.pieceList and self.kings["b"] in self.pieceList:
+            print("Draw")
+            return 
+        
         # clear the moveDict
         for piece in self.pieceList.values():
             if piece.color == turn:
@@ -118,7 +150,7 @@ class Board:
                     self.loadSlidingMoves(piece, 1)
                 elif piece.type == "k":
                     self.loadkmoves(piece)
-                
+
         # now see if a side is in checkmate
         # this happens when you're in check and have no legal moves to make
         if ((turn == "w" and len(self.whiteLegalMoves) == 0) or (turn == "b" and len(self.blackLegalMoves) == 0)):
@@ -228,27 +260,29 @@ class Board:
         # now lets calculate taking a piece
         # check if there is a pawn diagonal from the current pawn and opposite color
         for takePos in [pos + 9 * col, pos + 7 * col]:
-            # if you're in check and can take the piece, or you are not in check
-            checkRestriction = (self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)
-            # if you're not pinned, or you're pinned but you can take the pinned piece
-            pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
+            # check if takepos's file is only 1 different with current file
+            if abs(takePos % 8 - pos % 8) == 1:
+                # if you're in check and can take the piece, or you are not in check
+                checkRestriction = (self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck)
+                # if you're not pinned, or you're pinned but you can take the pinned piece
+                pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
 
-            # for each square that we are checking, there is either a piece on that square or not.
-            # first lets check if there is a piece there:
-            if takePos in self.pieceList:
-                # now there are two cases, either there is a same color piece here, or opponent
-                # if there is a same color piece here, make sure this piece is protecting that
-                if self.pieceList[takePos].color == pawn.color:
-                    self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)
-                # if there is a different colored piece on this square, see if we can take it:
-                # you must be not pinned, and pass check restriction
-                elif pinRestriction and checkRestriction:
-                    self.addMove(pawn, takePos)
-            # if there is no piece on a square, see if we can move there
-            else:
-                # if there is no piece on this square, you cannot take diagonally
-                # if you are pinned or you are in check, you still need to defend these squares
-                self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)       
+                # for each square that we are checking, there is either a piece on that square or not.
+                # first lets check if there is a piece there:
+                if takePos in self.pieceList:
+                    # now there are two cases, either there is a same color piece here, or opponent
+                    # if there is a same color piece here, make sure this piece is protecting that
+                    if self.pieceList[takePos].color == pawn.color:
+                        self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)
+                    # if there is a different colored piece on this square, see if we can take it:
+                    # you must be not pinned, and pass check restriction
+                    elif pinRestriction and checkRestriction:
+                        self.addMove(pawn, takePos)
+                # if there is no piece on a square, see if we can move there
+                else:
+                    # if there is no piece on this square, you cannot take diagonally
+                    # if you are pinned or you are in check, you still need to defend these squares
+                    self.whiteReach[takePos].append(pawn) if pawn.color == "w" else self.blackReach[takePos].append(pawn)       
         #######################################################################
         # calculating en passant moves:
         # parameters for an en passant move is:
@@ -343,11 +377,12 @@ class Board:
         for i in range(4):
             posInBetween = -1
             firstAdd = True
+            attackLine = set()
             for takePos in range(startList[i], endList[i], incList[i]):
                 # if you're in check and can take the piece, or you are not in check
                 checkRestriction = ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
                 # if you're not pinned, or you're pinned but you can take the pinned piece
-                pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
+                pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos) or (pos in self.pinnedPieces and takePos in self.lineOfPin)
 
                 # for each square that we are checking, there is either a piece on that square or not.
                 # first lets check if there is a peice there:
@@ -369,11 +404,13 @@ class Board:
                         # if it is a king, and the posinbetween location to our pinned pieces list and break
                         if self.pieceList[takePos].type == "k":
                             self.pinnedPieces[posInBetween] = pos
+                            self.lineOfPin = attackLine | self.lineOfPin
                         # if it is not a king on our second add, then break because there is no point
                         break
                 # now check if this position is an empty square
                 # if its the first time you are adding
                 elif firstAdd:
+                    attackLine.add(takePos)
                     # if we are adding an empty square on the first time, our piece can move there if we are not in check or not pinned
                     if pinRestriction and checkRestriction:
                         self.addMove(p, takePos)
@@ -382,10 +419,12 @@ class Board:
                 # if it's not your second add, and you are looking at an empty square, do nothing and keep going
                 # KEEP GOING UNLESS THE FIRSTADDED PIECE WAS A KING, TO GET SQUARES BEHIND KING
                 elif not firstAdd:
+                    attackLine.add(takePos)
                     oppcol = "b" if p.color == "w" else "w"
                     if posInBetween == self.kings[oppcol]:
                         self.whiteReach[takePos].append(p) if p.color == "w" else self.blackReach[takePos].append(p)
-                        break    
+                        break
+        # now check if the piece is pinned and can still move in the line of pin
 
     # loadkmoves
     # loads king moves for all kings
@@ -421,7 +460,7 @@ class Board:
             if pos + 3 in self.pieceList:
                 shortCastleRook = self.pieceList[pos + 3]
                 shortRookPos = pos + 3
-            elif pos - 4 in self.pieceList:
+            if pos - 4 in self.pieceList:
                 longCastleRook = self.pieceList[pos - 4]
                 longRookPos = pos - 4
 
@@ -447,21 +486,77 @@ class Board:
                 # your king cannot be in check
                 (self.kings[king.color] not in self.checkDict) and
                 # the squares in between castle can't be attackable
-                (len(longKingRoute.intersection(self.whiteLegalMoves)) == 0 if king.color == "b" else len(longKingRoute.intersection(self.blackLegalMoves)) == 0)
+                (len(longKingRoute.intersection(self.whiteReach)) == 0 if king.color == "b" else len(longKingRoute.intersection(self.blackReawhiteReach)) == 0)
             ):
                 self.addMove(king, pos - 2)
+
+    # promotePiece
+    # does the animation and functions for promoting a piece
+    def promotePiece(self, p, origin, dest):
+        # for the promotion animation, we need to shade the board, and draw four opaque circles and on each circle draw a knight queen rook and bishop
+        # 1) shade the board:
+        circleColor = (128,128,128)
+        col = p.color
+        colNum = -1 if col == "w" else 1
+        pos = dest
+        rank,file = piece.getRankFile(dest)
+        shadeBoard()
+
+        # get the images of the pieces to print
+        pieceList = [piece.queen(col, pos), piece.knight(col, pos + 8 * colNum), piece.rook(col, pos + 16 * colNum), piece.bishop(col, pos + 24 * colNum)]
+        pieceDict = {pos : piece.queen(col, pos), pos + 8 * colNum: piece.knight(col, pos + 8 * colNum), pos + 16 * colNum: piece.rook(col, pos + 16 * colNum), pos + 24 * colNum: piece.bishop(col, pos + 24 * colNum)}
+
+        for i in range(4):
+            offsetx = 2 * (8 - file) - 1
+            circlex = height - (dimension/2 * offsetx)
+            offsety = 2 * (8 - rank) - 1
+            circley = dimension/2 * offsety
+            # change rank
+            if col == "w":
+                rank -= 1
+            else:
+                rank += 1
+            # draw each circle
+            pygame.draw.circle(win, circleColor, (circlex, circley), dimension/2)
+            #draw each piece
+            pieceList[i].draw()
+        # update window
+        pygame.display.update()
+        self.promotionState = True
+
+        clock = pygame.time.Clock()
+        run = True
+        while run:
+            clock.tick(fps)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT: # if program is executed
+                    run = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    xpos = getmpos()[0]
+                    ypos = getmpos()[1]
+                    mousepos = 8 * ypos + xpos
+                    # if clicked on one of the pieces
+                    if mousepos in pieceDict:
+                        # add piece to piecelist
+                        self.pieceList[origin] = pieceDict[mousepos]
+                        self.pieceList[origin].setPos(pos)
+                        # change p to point to this piece
+                        p = self.pieceList[origin]
+                        # change origin to the origin of this new piece
+                        return p
+                    else:
+                        return -1
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
     def makeMove(self, origin, dest):
-        self.moveCounter += 1
-        print("on move", self.moveCounter)
+        self.promotionState = False
 
         # grab the piece, move it to the destination
-        piece = self.pieceList[origin]
+        p = self.pieceList[origin]
 
         # get color of piece
-        col = 1 if piece.color == "w" else -1
+        col = 1 if p.color == "w" else -1
 
         # if there is a piece being taken track that
         if dest in self.pieceList:
@@ -473,7 +568,7 @@ class Board:
 
         # delete en passant'ed pawn if needed
         # need to check if the enpassant is ACTUALLY done
-        if (piece.type == "p" and 
+        if (p.type == "p" and 
             self.enpassantPawnPos != -1 and
             (dest - self.enpassantPawnPos) == 8 * col
             ):
@@ -482,20 +577,27 @@ class Board:
             self.enpassantPawnPos = -1
             print("EN CHOSSANT HAS BEEN TAKEN")
 
+        # check if piece is promoting:
+        # if on the last rank for white or on the first rank for black
+        if (dest // 8 == 7 and p.color == "w" and p.type == "p") or (dest // 8 == 0 and p.color == "b" and p.type == "p"):
+            print("promoting")
+            if self.promotePiece(p, origin, dest) == -1:
+                return
+
         # move the piece to its destination
-        piece.setPos(dest)
+        p.setPos(dest)
         # update the position of the piece in pieceList
         self.pieceList[dest] = self.pieceList.pop(origin)  # YES, this also deletes the piece in origin
         # add the move to moveList
         self.moveList.append((origin, dest))
 
         # check if its a rook or king to update that they have been moved and no longer to castle:
-        if (piece.type in ("k", "r")):
-            piece.hasMoved = True
+        if (p.type in ("k", "r")):
+            p.hasMoved = True
 
         # check if its a king to track the position of it
-        if (piece.type == "k"):
-            self.kings[piece.color] = piece.position
+        if (p.type == "k"):
+            self.kings[p.color] = p.position
             # check if the king wants to castle to move the rook as well
             if dest - origin == 2:
                 # this means that the king wants to short castle
@@ -519,15 +621,18 @@ class Board:
                 rook.hasMoved = True
 
         # check how many moves since last pawn move
-        if piece.type != 'p':
+        if p.type != 'p':
             self.movesSinceLastPawn += 1 if self.turn == 'b' else 0
         else:
             self.movesSinceLastPawn = 0
 
+        self.moveCounter += 1
+        print("on move", self.moveCounter)
         self.checkDict.clear()
         self.whiteReach.clear()
         self.blackReach.clear()
         self.pinnedPieces.clear()
+        self.lineOfPin.clear()
         self.moveDict.clear()
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
@@ -539,8 +644,6 @@ class Board:
         # switch the move
         self.turn = 'w' if self.turn == 'b' else 'b'
 
-        # self.whiteLegalMoves.clear()
-        # self.blackLegalMoves.clear()
         # clear line of check and see if other side is in check
         self.lineOfCheck.clear()
         self.isInCheck(self.turn)

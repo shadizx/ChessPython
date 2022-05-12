@@ -35,28 +35,28 @@ class Piece:
 # class pawn(piece) ---------------------------------------
 class pawn(Piece):
     def __init__(self, color, position = 0):
-        super().__init__(color, type="p")  # have to keep it like this for the defaults to work!
+        super().__init__(color, position = position, type="p")  # have to keep it like this for the defaults to work!
         self.type = "p"
 # class pawn(piece) ----------------------------------------
 
 # class bishop(piece) --------------------------------------
 class bishop(Piece):
     def __init__(self, color, position = 0):
-        super().__init__(color, type="b")
+        super().__init__(color, position = position, type="b")
         self.type = "b"
 # class bishop(piece) --------------------------------------
 
 # class knight(piece) --------------------------------------
 class knight(Piece):
     def __init__(self, color, position = 0):
-        super().__init__(color, type="n")
+        super().__init__(color, position = position, type="n")
         self.type = "n"
 # class knight(piece) --------------------------------------
 
 # class rook(piece) ----------------------------------------
 class rook(Piece):
     def __init__(self, color, position = 0):
-        super().__init__(color, type="r")
+        super().__init__(color, position = position, type="r")
         self.type = "r"
         self.hasMoved = False
 # class rook(piece) -----------------------------------------
@@ -64,14 +64,14 @@ class rook(Piece):
 # class queen(piece) ----------------------------------------
 class queen(Piece):
     def __init__(self, color, position = 0):
-        super().__init__(color, type="q")
+        super().__init__(color, position = position, type="q")
         self.type = "q"
 # class queen(piece) -----------------------------------------
 
 # class king(piece) ------------------------------------------
 class king(Piece):
     def __init__(self, color, position = 0):
-        super().__init__(color, type="k")
+        super().__init__(color, position = position, type="k")
         self.type = "k"
         self.hasMoved = False
 # class king(piece) -------------------------------------------
