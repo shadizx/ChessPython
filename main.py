@@ -1,6 +1,5 @@
 # game.py
 # responsible for running the main program
-from tracemalloc import start
 import pygame
 import piece
 import board

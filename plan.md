@@ -60,4 +60,8 @@ trying to restructure code, then add in piece moves
 - [ ] make a function to generate all moves and add them to a dictionary mapped with position of the piece (board class, board.py) - ROHAM
 - [ ] make a function to generate all legal moves (board.py) with altering the board state after each move - ROHAM
 - [X] make pieces able to move again - SHADI
-
+--------------------------------------------------------------------------------------------
+BUGS:
+    sliding piece can't move when its pinned, to still stay in pin [X] *fixed by shadi, added line of pin
+    add promotion
+    revert and forward move doesn't work

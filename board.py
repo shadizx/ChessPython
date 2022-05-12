@@ -29,7 +29,7 @@ takeSound = pygame.mixer.Sound("sounds/capture.ogg")
 class Board:
 
     # start with this FEN
-    FEN = "k7/8/1p6/8/5r2/8/5P/4K2R w K - 0 1"
+    FEN = "k7/8/1p6/8/5b2/8/5Pb/B4K2B w K - 0 1"
     # FEN = DEFAULTFEN
 
     # holds boardcolors ( the squares )
@@ -74,6 +74,11 @@ class Board:
     # contains the pinned pieces. key is the pinnned piece pos, and value is the pinning piece pos
     # format: {11: 32} means a piece on square 11 is pinned by a piece on square 32
     pinnedPieces = defaultdict(lambda: [])
+
+
+    # line of pin set 
+    # contains the positions that is in the line of pin
+    lineOfPin = set()
 
     # incheck boolean set to check if king is in check
     inCheck = False
@@ -343,11 +348,12 @@ class Board:
         for i in range(4):
             posInBetween = -1
             firstAdd = True
+            attackLine = set()
             for takePos in range(startList[i], endList[i], incList[i]):
                 # if you're in check and can take the piece, or you are not in check
                 checkRestriction = ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
                 # if you're not pinned, or you're pinned but you can take the pinned piece
-                pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos)
+                pinRestriction = (pos not in self.pinnedPieces) or (self.pinnedPieces[pos] == takePos) or (pos in self.pinnedPieces and takePos in self.lineOfPin)
 
                 # for each square that we are checking, there is either a piece on that square or not.
                 # first lets check if there is a peice there:
@@ -369,11 +375,13 @@ class Board:
                         # if it is a king, and the posinbetween location to our pinned pieces list and break
                         if self.pieceList[takePos].type == "k":
                             self.pinnedPieces[posInBetween] = pos
+                            self.lineOfPin = attackLine | self.lineOfPin
                         # if it is not a king on our second add, then break because there is no point
                         break
                 # now check if this position is an empty square
                 # if its the first time you are adding
                 elif firstAdd:
+                    attackLine.add(takePos)
                     # if we are adding an empty square on the first time, our piece can move there if we are not in check or not pinned
                     if pinRestriction and checkRestriction:
                         self.addMove(p, takePos)
@@ -382,10 +390,12 @@ class Board:
                 # if it's not your second add, and you are looking at an empty square, do nothing and keep going
                 # KEEP GOING UNLESS THE FIRSTADDED PIECE WAS A KING, TO GET SQUARES BEHIND KING
                 elif not firstAdd:
+                    attackLine.add(takePos)
                     oppcol = "b" if p.color == "w" else "w"
                     if posInBetween == self.kings[oppcol]:
                         self.whiteReach[takePos].append(p) if p.color == "w" else self.blackReach[takePos].append(p)
-                        break    
+                        break
+        # now check if the piece is pinned and can still move in the line of pin
 
     # loadkmoves
     # loads king moves for all kings
@@ -421,7 +431,7 @@ class Board:
             if pos + 3 in self.pieceList:
                 shortCastleRook = self.pieceList[pos + 3]
                 shortRookPos = pos + 3
-            elif pos - 4 in self.pieceList:
+            if pos - 4 in self.pieceList:
                 longCastleRook = self.pieceList[pos - 4]
                 longRookPos = pos - 4
 
@@ -447,7 +457,7 @@ class Board:
                 # your king cannot be in check
                 (self.kings[king.color] not in self.checkDict) and
                 # the squares in between castle can't be attackable
-                (len(longKingRoute.intersection(self.whiteLegalMoves)) == 0 if king.color == "b" else len(longKingRoute.intersection(self.blackLegalMoves)) == 0)
+                (len(longKingRoute.intersection(self.whiteReach)) == 0 if king.color == "b" else len(longKingRoute.intersection(self.blackReawhiteReach)) == 0)
             ):
                 self.addMove(king, pos - 2)
 
@@ -528,6 +538,7 @@ class Board:
         self.whiteReach.clear()
         self.blackReach.clear()
         self.pinnedPieces.clear()
+        self.lineOfPin.clear()
         self.moveDict.clear()
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
