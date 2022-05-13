@@ -48,7 +48,7 @@ def getmpos():
 class Board:
 
     # start with this FEN
-    FEN = "k3n/3P/3b/8/8/p7/8/7K w - - 0 1"
+    FEN = "1k6/4pb2/8/3P4/2K5/8/8/8 w - - 0 1"
     # FEN = DEFAULTFEN
 
     # holds boardcolors ( the squares )
@@ -128,7 +128,7 @@ class Board:
         # check if there are only two kings remaining so it would be a draw
         if len(self.pieceList) == 2 and self.kings["w"] in self.pieceList and self.kings["b"] in self.pieceList:
             print("Draw")
-            return 
+            return 0
         
         # clear the moveDict
         for piece in self.pieceList.values():
@@ -153,8 +153,13 @@ class Board:
 
         # now see if a side is in checkmate
         # this happens when you're in check and have no legal moves to make
-        if ((turn == "w" and len(self.whiteLegalMoves) == 0) or (turn == "b" and len(self.blackLegalMoves) == 0)):
-            print("Checkmate!") if self.kings[turn] in self.checkDict else print("Stalemate!")
+        if (turn == "w" and len(self.whiteLegalMoves) == 0) or (turn == "b" and len(self.blackLegalMoves) == 0):
+            if self.kings[turn] in self.checkDict:
+                print("Checkmate!")
+                return 2
+            else:
+                print("Stalemate!")
+                return 1
 
     # addmove
     # adds a legal move to the appropriate dictionaries
@@ -167,7 +172,7 @@ class Board:
             self.whiteLegalMoves.add(dest)
         else:
             self.blackReach[dest].append(piece)
-            self.blackLegalMoves.add(dest)
+            self.blackLegalMoves.add(dest) 
 
     # function for checking if king is in check in O(1) time
     # updates the line of check set efficiently 
@@ -290,7 +295,7 @@ class Board:
         #   2) and this happens on rank 5 (for white) and rank 4 (for black)
 
         # check if there has been a move played
-        if len(self.moveList) != 0 and pos not in self.pinnedPieces:
+        if len(self.moveList) != 0 and pos:
             # get coordinates of the other peice's position (last position and current one)
             otherPiecePos = (self.moveList[-1])[1]
             otherPiecePrevPos = (self.moveList)[-1][0]
@@ -310,9 +315,8 @@ class Board:
                     # check if on same rank and left/right file
                     ((abs(otherPieceFile - currFile) == 1)) and
                     (otherPieceRank == currRank) and 
-                    (abs(pos - otherPiecePos) == 1)
-                    # check if this happens on rank 5 (for white) and rank 4 (for black):
-                    # ((pos // 8 == 4 and pawn.color == "w") or (pos // 8 == 3 and pawn.color == "b"))
+                    (abs(pos - otherPiecePos) == 1) and 
+                    (pos not in self.pinnedPieces or (pos in self.pinnedPieces and otherPiecePos + 8 * col in self.lineOfPin))
             ):
                 if ((self.inCheck and (otherPiecePos in self.lineOfCheck)) or (not self.inCheck)):
                     self.addMove(pawn, otherPiecePos + 8 * col)
@@ -486,7 +490,7 @@ class Board:
                 # your king cannot be in check
                 (self.kings[king.color] not in self.checkDict) and
                 # the squares in between castle can't be attackable
-                (len(longKingRoute.intersection(self.whiteReach)) == 0 if king.color == "b" else len(longKingRoute.intersection(self.blackReawhiteReach)) == 0)
+                (len(longKingRoute.intersection(self.whiteReach)) == 0 if king.color == "b" else len(longKingRoute.intersection(self.blackReach)) == 0)
             ):
                 self.addMove(king, pos - 2)
 
@@ -640,7 +644,8 @@ class Board:
         self.lineOfCheck.clear()
         self.isInCheck(self.turn)
         # generate new moves for the same side after they turned, to see if the other side is in check
-        self.generateMoves(self.turn)
+        if self.generateMoves(self.turn) in [0,1,2]:
+            return
         # switch the move
         self.turn = 'w' if self.turn == 'b' else 'b'
 
@@ -650,7 +655,8 @@ class Board:
         
         self.moveDict.clear()
         # generate moves for other side
-        self.generateMoves(self.turn)
+        if self.generateMoves(self.turn) in [0,1,2]:
+            return
 
     def revertMove(self):
         if self.moveCounter != 0:

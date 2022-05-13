@@ -63,5 +63,6 @@ trying to restructure code, then add in piece moves
 --------------------------------------------------------------------------------------------
 BUGS:
     sliding piece can't move when its pinned, to still stay in pin [X] *fixed by shadi, added line of pin
-    add promotion
+    add promotion [X] 
     revert and forward move doesn't work
+    
