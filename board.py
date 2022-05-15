@@ -6,7 +6,7 @@ import piece
 from dataclasses import dataclass
 from collections import defaultdict
 
-###################### aconstants ############################
+###################### constants ############################
 width = height = 640                           # constant width and height, set for basic testing
 win = pygame.display.set_mode((width, height)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
@@ -48,7 +48,7 @@ def getmpos():
 class Board:
 
     # start with this FEN
-    FEN = "1k6/4pb2/8/3P4/2K5/8/8/8 w - - 0 1"
+    FEN = "8/4P/8/1n2k3/4B3/8/3P4/3K4 w - - 0 1"
     # FEN = DEFAULTFEN
 
     # holds boardcolors ( the squares )
@@ -295,13 +295,13 @@ class Board:
         #   2) and this happens on rank 5 (for white) and rank 4 (for black)
 
         # check if there has been a move played
-        if len(self.moveList) != 0 and pos:
+        if len(self.moveList) != 0:
             # get coordinates of the other peice's position (last position and current one)
             otherPiecePos = (self.moveList[-1])[1]
+            # [(8,24),(62,54)]
             otherPiecePrevPos = (self.moveList)[-1][0]
             # get rank and file from otherPiecePos
             otherPieceRank, otherPieceFile = piece.getRankFile(otherPiecePos)
-            # otherPiecePrevRank, otherPiecePrevFile = piece.getRankFile(otherPiecePrevPos)
             # get the current rank and file
             currRank, currFile = piece.getRankFile(pos)
 
@@ -315,13 +315,15 @@ class Board:
                     # check if on same rank and left/right file
                     ((abs(otherPieceFile - currFile) == 1)) and
                     (otherPieceRank == currRank) and 
-                    (abs(pos - otherPiecePos) == 1) and 
-                    (pos not in self.pinnedPieces or (pos in self.pinnedPieces and otherPiecePos + 8 * col in self.lineOfPin))
+                    (abs(pos - otherPiecePos) == 1) and
+                    # if your pawn is not pinned, or its pinned and can take and still be pinned
+                    (pos not in self.pinnedPieces or (pos in self.pinnedPieces and otherPiecePos + 8 * col in self.lineOfPin)) and
+                    # you're not in check, or you're in check and you can take the checking piece
+                    (self.inCheck and (otherPiecePos in self.lineOfCheck)) or (not self.inCheck)
             ):
-                if ((self.inCheck and (otherPiecePos in self.lineOfCheck)) or (not self.inCheck)):
-                    self.addMove(pawn, otherPiecePos + 8 * col)
-                    self.enpassantPawnPos = otherPiecePos
-                    print("EN CHOSSANT")
+                self.addMove(pawn, otherPiecePos + 8 * col)
+                self.enpassantPawnPos = otherPiecePos
+                print("EN CHOSSANT")
 
     # loadnmoves
     # loads knight moves for all knights
@@ -381,7 +383,8 @@ class Board:
         for i in range(4):
             posInBetween = -1
             firstAdd = True
-            attackLine = set()
+            # used for seeing if the pinned piece can move, later added to line of pin
+            pinLine = set()
             for takePos in range(startList[i], endList[i], incList[i]):
                 # if you're in check and can take the piece, or you are not in check
                 checkRestriction = ((self.inCheck and (takePos in self.lineOfCheck)) or (not self.inCheck))
@@ -408,13 +411,13 @@ class Board:
                         # if it is a king, and the posinbetween location to our pinned pieces list and break
                         if self.pieceList[takePos].type == "k":
                             self.pinnedPieces[posInBetween] = pos
-                            self.lineOfPin = attackLine | self.lineOfPin
+                            self.lineOfPin = pinLine | self.lineOfPin
                         # if it is not a king on our second add, then break because there is no point
                         break
                 # now check if this position is an empty square
                 # if its the first time you are adding
                 elif firstAdd:
-                    attackLine.add(takePos)
+                    pinLine.add(takePos)
                     # if we are adding an empty square on the first time, our piece can move there if we are not in check or not pinned
                     if pinRestriction and checkRestriction:
                         self.addMove(p, takePos)
@@ -423,7 +426,7 @@ class Board:
                 # if it's not your second add, and you are looking at an empty square, do nothing and keep going
                 # KEEP GOING UNLESS THE FIRSTADDED PIECE WAS A KING, TO GET SQUARES BEHIND KING
                 elif not firstAdd:
-                    attackLine.add(takePos)
+                    pinLine.add(takePos)
                     oppcol = "b" if p.color == "w" else "w"
                     if posInBetween == self.kings[oppcol]:
                         self.whiteReach[takePos].append(p) if p.color == "w" else self.blackReach[takePos].append(p)
@@ -536,20 +539,21 @@ class Board:
                 if event.type == pygame.QUIT: # if program is executed
                     run = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    xpos = getmpos()[0]
-                    ypos = getmpos()[1]
-                    mousepos = 8 * ypos + xpos
-                    # if clicked on one of the pieces
-                    if mousepos in pieceDict:
-                        # add piece to piecelist
-                        self.pieceList[origin] = pieceDict[mousepos]
-                        self.pieceList[origin].setPos(pos)
-                        # change p to point to this piece
-                        p = self.pieceList[origin]
-                        # change origin to the origin of this new piece
-                        return p
-                    else:
-                        return -1
+                    if event.button == 1: # if left-clicked
+                        xpos = getmpos()[0]
+                        ypos = getmpos()[1]
+                        mousepos = 8 * ypos + xpos
+                        # if clicked on one of the pieces
+                        if mousepos in pieceDict:
+                            # add piece to piecelist
+                            self.pieceList[origin] = pieceDict[mousepos]
+                            # self.pieceList[origin].setPos(pos)
+                            # change p to point to this piece
+                            p = self.pieceList[origin]
+                            # change origin to the origin of this new piece
+                            return p
+                        else:
+                            return -1
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
@@ -564,7 +568,7 @@ class Board:
 
         # if there is a piece being taken track that
         if dest in self.pieceList:
-            self.takenPieces[self.moveCounter] = self.pieceList[dest]
+            self.takenPieces[self.moveCounter + 1] = self.pieceList[dest]
             pygame.mixer.Sound.play(takeSound)
             print("TAKEN PIECE ON MOVE", self.moveCounter)
         else:
@@ -585,8 +589,15 @@ class Board:
         # if on the last rank for white or on the first rank for black
         if (dest // 8 == 7 and p.color == "w" and p.type == "p") or (dest // 8 == 0 and p.color == "b" and p.type == "p"):
             print("promoting")
-            if self.promotePiece(p, origin, dest) == -1:
+            p = self.promotePiece(p, origin, dest)
+            if p == -1:
                 return
+        
+        # check if the move made is not the same as the last unmade move
+        # this means that we should pop the last unmade move because we are on a different branch
+        if len(self.unmadeMoves) > 0:
+            if (origin, dest != self.unmadeMoves[-1][0], self.unmadeMoves[-1][1]):
+                self.unmadeMoves.pop()
 
         # move the piece to its destination
         p.setPos(dest)
@@ -642,7 +653,7 @@ class Board:
         self.blackLegalMoves.clear()
 
         self.lineOfCheck.clear()
-        self.isInCheck(self.turn)
+        # self.isInCheck(self.turn)
         # generate new moves for the same side after they turned, to see if the other side is in check
         if self.generateMoves(self.turn) in [0,1,2]:
             return
@@ -674,11 +685,31 @@ class Board:
             # add reverted moves to unmadeMoves:
             self.unmadeMoves.append((previousOrigin, previousDest))
 
-            self.generateMoves(self.turn)
+            self.checkDict.clear()
+            self.whiteReach.clear()
+            self.blackReach.clear()
+            self.pinnedPieces.clear()
+            self.lineOfPin.clear()
+            self.moveDict.clear()
+            self.whiteLegalMoves.clear()
+            self.blackLegalMoves.clear()
+
+            self.lineOfCheck.clear()
+            # self.isInCheck(self.turn)
+            # generate new moves for the same side after they turned, to see if the other side is in check
+            if self.generateMoves(self.turn) in [0,1,2]:
+                return
+            # switch the move
             self.turn = 'w' if self.turn == 'b' else 'b'
-            # generate new moves after making a move
+
+            # clear line of check and see if other side is in check
+            self.lineOfCheck.clear()
             self.isInCheck(self.turn)
-            self.generateMoves(self.turn)
+            
+            self.moveDict.clear()
+            # generate moves for other side
+            if self.generateMoves(self.turn) in [0,1,2]:
+                return
 
     # draw
     # draws board squares
