@@ -118,7 +118,8 @@ def main():
                 if event.button == 1: # if left-clicked
                     # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
                     # print("\n\n######################################################################")
-                    # print("movedict is ", str(BOARD.moveDict))
+                    print("movelist is ", str(BOARD.moveList))
+                    print("unmade moves is ", str(BOARD.unmadeMoves))
                     # print("turn is for ", BOARD.turn)
                     # print("######################################################################")
                     # print("checkdict is ", BOARD.checkDict)
@@ -192,7 +193,6 @@ def main():
                     # move piece to mouse
                     piece2mouse(xloc, yloc, p)
             if event.type == pygame.KEYDOWN:
-                print("taken pieces is " + str(BOARD.takenPieces))
                 if event.key == pygame.K_LEFT:
                     BOARD.revertMove()
                     legalCircles.clear()
@@ -201,10 +201,10 @@ def main():
                 elif event.key == pygame.K_RIGHT:
                     if (len(BOARD.unmadeMoves) > 0):
                             BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1])
-                            BOARD.unmadeMoves.pop()
+                            # BOARD.unmadeMoves.pop()
                             legalCircles.clear()
                             refresh()
-                            print(BOARD.unmadeMoves)
+                            # print(BOARD.unmadeMoves)
 
 #################################while loop####################################################
         
