@@ -48,7 +48,7 @@ def getmpos():
 class Board:
 
     # start with this FEN
-    FEN = "8/4P/8/1n2k3/4B3/8/3P4/3K4 w - - 0 1"
+    FEN = "r3k2r/pppppppp/1q6/8/8/1Q6/PPPPPPPP/R3K2R w KQkq - 0 1"
     # FEN = DEFAULTFEN
 
     # holds boardcolors ( the squares )
@@ -64,10 +64,10 @@ class Board:
     # tracks unmade moves to then go forward with arrow key
     unmadeMoves = []
 
-    # tracks taken pieces to use in revertmove
-    # maps the move number to a piece that was taken on that move
-    # format" {5, q} means on move 5 a queen was taken
-    takenPieces = {}
+    # tracks lost pieces to use in revertmove
+    # maps the move number to a piece that was lost on that move
+    # format" {5, q} means on move 5 a queen was "lost" or disappeared from the board
+    lostPieces = {}
 
     # tracks number of moves that have been played
     moveCounter = 0
@@ -112,6 +112,9 @@ class Board:
 
     # see if board is in promotion state
     promotionState = False
+
+    # maps move number to the piece that was promoted on that move
+    promotedPieces = {}
 
     def __init__(self):
         self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber, self.kings = fen(self.FEN).LoadFromFEN()
@@ -319,7 +322,7 @@ class Board:
                     # if your pawn is not pinned, or its pinned and can take and still be pinned
                     (pos not in self.pinnedPieces or (pos in self.pinnedPieces and otherPiecePos + 8 * col in self.lineOfPin)) and
                     # you're not in check, or you're in check and you can take the checking piece
-                    (self.inCheck and (otherPiecePos in self.lineOfCheck)) or (not self.inCheck)
+                    ((self.inCheck and (otherPiecePos in self.lineOfCheck)) or (not self.inCheck))
             ):
                 self.addMove(pawn, otherPiecePos + 8 * col)
                 self.enpassantPawnPos = otherPiecePos
@@ -499,7 +502,18 @@ class Board:
 
     # promotePiece
     # does the animation and functions for promoting a piece
-    def promotePiece(self, p, origin, dest):
+    def promotePiece(self, p, origin, dest, autoComplete = None):
+
+        # if autocomplete is true, then just return the autocompleted piece
+        if autoComplete is not None:
+            # add piece to piecelist
+            self.pieceList[origin] = autoComplete
+            self.pieceList[origin].setPos(dest)
+            # change p to point to this piece
+            p = self.pieceList[origin]
+            # change origin to the origin of this new piece
+            return p
+
         # for the promotion animation, we need to shade the board, and draw four opaque circles and on each circle draw a knight queen rook and bishop
         # 1) shade the board:
         circleColor = (128,128,128)
@@ -547,7 +561,7 @@ class Board:
                         if mousepos in pieceDict:
                             # add piece to piecelist
                             self.pieceList[origin] = pieceDict[mousepos]
-                            # self.pieceList[origin].setPos(pos)
+                            self.pieceList[origin].setPos(pos)
                             # change p to point to this piece
                             p = self.pieceList[origin]
                             # change origin to the origin of this new piece
@@ -557,8 +571,12 @@ class Board:
 
     # makeMove
     # useful for moving a piece and updating our directory accordingly
-    def makeMove(self, origin, dest):
+    def makeMove(self, origin, dest, forced = None):
+        self.moveCounter += 1
+        print("on move", self.moveCounter)
+
         self.promotionState = False
+        autoComplete = None
 
         # grab the piece, move it to the destination
         p = self.pieceList[origin]
@@ -566,42 +584,61 @@ class Board:
         # get color of piece
         col = 1 if p.color == "w" else -1
 
+        ################# PIECE BEING TAKEN #######################
         # if there is a piece being taken track that
         if dest in self.pieceList:
-            self.takenPieces[self.moveCounter + 1] = self.pieceList[dest]
+            self.lostPieces[self.moveCounter] = self.pieceList[dest]
             pygame.mixer.Sound.play(takeSound)
             print("TAKEN PIECE ON MOVE", self.moveCounter)
         else:
             pygame.mixer.Sound.play(moveSound)
 
+        ###################### ENPASSANT ###########################
         # delete en passant'ed pawn if needed
         # need to check if the enpassant is ACTUALLY done
         if (p.type == "p" and 
             self.enpassantPawnPos != -1 and
             (dest - self.enpassantPawnPos) == 8 * col
             ):
-            self.takenPieces[self.moveCounter] = self.pieceList[self.enpassantPawnPos]
+            # add to lost pieces so we can bring back the piece
+            self.lostPieces[self.moveCounter] = self.pieceList[self.enpassantPawnPos]
             del self.pieceList[self.enpassantPawnPos]
             self.enpassantPawnPos = -1
             print("EN CHOSSANT HAS BEEN TAKEN")
 
+        ###################### AUTOCOMPLETE #########################
+        # check if the move made is not the same as the last unmade move
+        # this means that we should pop the last unmade move because we are on a different branch
+        if len(self.unmadeMoves) > 0:
+            samelastmove = (origin, dest) != self.unmadeMoves.pop()
+            if (samelastmove and self.moveCounter not in self.promotedPieces):
+                self.unmadeMoves.clear()
+            elif self.moveCounter in self.promotedPieces and not samelastmove:
+                # if movecounter is in self.promotedpieces then this means we have played this promotion before
+                # and we want to auto complete it
+                if forced is not None:
+                    autoComplete = self.promotedPieces.pop(self.moveCounter)
+                
+        ###################### PROMOTION ###########################
         # check if piece is promoting:
         # if on the last rank for white or on the first rank for black
         if (dest // 8 == 7 and p.color == "w" and p.type == "p") or (dest // 8 == 0 and p.color == "b" and p.type == "p"):
             print("promoting")
-            p = self.promotePiece(p, origin, dest)
-            if p == -1:
+            promotedPiece = self.promotePiece(p, origin, dest, autoComplete)
+            if promotedPiece == -1:
                 return
+            # add to lost pieces for reverting moves
+            self.lostPieces[self.moveCounter] = p
+            p = copy(promotedPiece)
+            # add to promotedpieces to track if we go forward
+            self.promotedPieces[self.moveCounter] = p
         
-        # check if the move made is not the same as the last unmade move
-        # this means that we should pop the last unmade move because we are on a different branch
-        if len(self.unmadeMoves) > 0:
-            if (origin, dest != self.unmadeMoves[-1][0], self.unmadeMoves[-1][1]):
-                self.unmadeMoves.pop()
 
+        ###################### MOVING PIECE ###########################
         # move the piece to its destination
         p.setPos(dest)
         # update the position of the piece in pieceList
+        print(self.pieceList[origin])
         self.pieceList[dest] = self.pieceList.pop(origin)  # YES, this also deletes the piece in origin
         # add the move to moveList
         self.moveList.append((origin, dest))
@@ -610,6 +647,7 @@ class Board:
         if (p.type in ("k", "r")):
             p.hasMoved = True
 
+        ##################### CASTLING AND KINGS #######################
         # check if its a king to track the position of it
         if (p.type == "k"):
             self.kings[p.color] = p.position
@@ -624,6 +662,7 @@ class Board:
                 self.pieceList[origin + 1] = self.pieceList.pop(origin + 3)
                 # update hasmoved of rook
                 rook.hasMoved = True
+
             elif dest - origin == -2:
                 # this means that the king wants to long castle
                 # get position of rook
@@ -635,14 +674,14 @@ class Board:
                 # update hasmoved of rook
                 rook.hasMoved = True
 
+        ####################### 50 MOVE RULE ############################
         # check how many moves since last pawn move
         if p.type != 'p':
             self.movesSinceLastPawn += 1 if self.turn == 'b' else 0
         else:
             self.movesSinceLastPawn = 0
 
-        self.moveCounter += 1
-        print("on move", self.moveCounter)
+        ######################## DIRECTORIES ############################
         self.checkDict.clear()
         self.whiteReach.clear()
         self.blackReach.clear()
@@ -651,7 +690,6 @@ class Board:
         self.moveDict.clear()
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
-
         self.lineOfCheck.clear()
         # self.isInCheck(self.turn)
         # generate new moves for the same side after they turned, to see if the other side is in check
@@ -671,17 +709,48 @@ class Board:
 
     def revertMove(self):
         if self.moveCounter != 0:
+            # grab origin and dest of last move played
             previousOrigin, previousDest = (self.moveList.pop(-1))  # removes and returns the last element
-            # grab the piece, move it back to the origin
-            # revert the piece that just moved
-            self.pieceList[previousOrigin] = self.pieceList.pop(previousDest)
-            self.pieceList[previousOrigin].setPos(previousOrigin)
+            # grab the piece
+            p = self.pieceList.pop(previousDest)
+            pos = p.position
+
+            # check if a castle was made to revert the castle
+            if p.type == "k":
+                # if short castle:
+                if previousDest - previousOrigin == 2:
+                    # move pieces back to original spots
+                    # get position of rook
+                    rook = self.pieceList[pos - 1]
+                    # move the piece to its original position
+                    rook.setPos(previousOrigin + 3)
+                    # update the position of the piece in pieceList
+                    self.pieceList[previousOrigin + 3] = self.pieceList.pop(pos - 1)
+                    # update hasmoved of rook
+                    rook.hasMoved = False
+                    p.hasMoved = False
+                # long castle:
+                elif previousDest - previousOrigin == -2:
+                    # get position of rook
+                    rook = self.pieceList[pos + 1]
+                    # move the piece to its original position
+                    rook.setPos(previousOrigin - 4)
+                    # update the position of the piece in pieceList
+                    self.pieceList[previousOrigin - 4] = self.pieceList.pop(pos + 1)
+                    # update hasmoved of rook
+                    rook.hasMoved = False
+                    p.hasMoved = False
+
+            p.setPos(previousOrigin)
+            self.pieceList[previousOrigin] = p
+
             # see if there was a piece taken on previous dest
-            if self.moveCounter in self.takenPieces:
-                takenPiece = self.takenPieces.pop(self.moveCounter)
+            # bring it back to life
+            if (self.moveCounter in self.lostPieces):
+                takenPiece = self.lostPieces.pop(self.moveCounter)
                 self.pieceList[takenPiece.position] = takenPiece
+            
             self.moveCounter -= 1
-            # switch colors
             # add reverted moves to unmadeMoves:
             self.unmadeMoves.append((previousOrigin, previousDest))
 
