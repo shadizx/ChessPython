@@ -1,5 +1,6 @@
 # board.py
 # responsible for boad structure and operations
+from hashlib import new
 import pygame
 from copy import copy
 import piece
@@ -7,12 +8,11 @@ from dataclasses import dataclass
 from collections import defaultdict
 
 ###################### constants ############################
-width = height = 640                           # constant width and height, set for basic testing
-win = pygame.display.set_mode((width, height)) # setting window width and height
+WIDTH, HEIGHT = 1000, 640                           # constant width and height, set for basic testing
+win = pygame.display.set_mode((WIDTH, HEIGHT)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
-fps = 60                                       # setting fps of game
-dimension = width//8                           # dimension of each square
-piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
+FPS = 60                                       # setting fps of game
+DIMENSION = HEIGHT//8                           # dimension of each square
 DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ###################################################################
 # sounds for moving pieces
@@ -28,7 +28,7 @@ takeSound = pygame.mixer.Sound("sounds/capture.ogg")
 ################################BOARD ANIMATIONS###################################
 # shadeboard()
 def shadeBoard():
-    s = pygame.Surface((height,height))     # the size of your rect
+    s = pygame.Surface((HEIGHT,HEIGHT))     # the size of your rect
     s.set_alpha(160)                        # translucency level
     s.fill((0, 0, 0, 127))                  # color of square
     win.blit(s, (0,0))                      # (0,0) are the top-left coordinates
@@ -46,6 +46,8 @@ def getmpos():
 # class Board
 # inherits from fen, responsible for board square colors
 class Board:
+
+    boardWidth, boardHeight = WIDTH, HEIGHT
 
     # start with this FEN
     FEN = "r3k2r/pppppppp/1q6/8/8/1Q6/PPPPPPPP/R3K2R w KQkq - 0 1"
@@ -532,16 +534,16 @@ class Board:
 
         for i in range(4):
             offsetx = 2 * (8 - file) - 1
-            circlex = height - (dimension/2 * offsetx)
+            circlex = HEIGHT - (DIMENSION/2 * offsetx)
             offsety = 2 * (8 - rank) - 1
-            circley = dimension/2 * offsety
+            circley = DIMENSION/2 * offsety
             # change rank
             if col == "w":
                 rank -= 1
             else:
                 rank += 1
             # draw each circle
-            pygame.draw.circle(win, circleColor, (circlex, circley), dimension/2)
+            pygame.draw.circle(win, circleColor, (circlex, circley), DIMENSION/2)
             #draw each piece
             pieceList[i].draw()
         # update window
@@ -551,7 +553,7 @@ class Board:
         clock = pygame.time.Clock()
         run = True
         while run:
-            clock.tick(fps)
+            clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: # if program is executed
                     run = False
@@ -802,15 +804,19 @@ class Board:
     def draw(self):
         # first time draw is called, load the square
         # next time, just draw the squares
+        print("board height is ", self.boardHeight)
         if len(self.boardColors) == 0:
             for position in range(64):
                 isWhite = sum(piece.getRankFile(position)) % 2 != 0
-                temp = Square(position, isWhite)
+                temp = Square(position, isWhite, self.boardHeight)
                 temp.draw()
                 self.boardColors.append(temp)
         else:
             for square in self.boardColors:
-                square.draw()
+                square.draw(self.boardHeight)
+
+    def resize(self, height):
+        self.boardHeight = height
 #class board
 ###################################################################
 # class fen
@@ -883,15 +889,19 @@ class Square:
     # default constructor
     WHITE=(248,220,180)
     BLACK=(184,140,100)
+    boardHeight = HEIGHT
 
-    def __init__(self, position, color):
+    def __init__(self, position, color, height = HEIGHT):
         self.position = position
         self.isWhite = color
         self.color = self.WHITE if self.isWhite else self.BLACK
+        self.boardHeight = height
+        print(self.boardHeight)
+        print("##")
 
-    def draw(self):
+    def draw(self, newHeight = boardHeight):
         y, x = divmod(self.position, 8)
-        pygame.draw.rect(win, self.color, pygame.Rect(x * dimension, height - (y+1) * dimension, dimension, dimension))
+        pygame.draw.rect(win, self.color, pygame.Rect(x * DIMENSION, newHeight - (y+1) * DIMENSION, DIMENSION, DIMENSION))
 
 # class square
 ###################################################################
