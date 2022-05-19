@@ -59,6 +59,7 @@ class rook(Piece):
         super().__init__(color, position = position, type="r")
         self.type = "r"
         self.hasMoved = False
+        self.firstMove = -1
 # class rook(piece) -----------------------------------------
 
 # class queen(piece) ----------------------------------------
@@ -74,4 +75,5 @@ class king(Piece):
         super().__init__(color, position = position, type="k")
         self.type = "k"
         self.hasMoved = False
+        self.firstMove = -1
 # class king(piece) -------------------------------------------

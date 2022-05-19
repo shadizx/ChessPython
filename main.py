@@ -120,14 +120,14 @@ def main():
                     # print("\n\n######################################################################")
                     # print("movelist is ", str(BOARD.moveList))
                     # print("unmade moves is ", str(BOARD.unmadeMoves))
-                    print("PIECELIST", BOARD.pieceList)
+                    # print("PIECELIST", BOARD.pieceList)
                     # print("######################################################################")
                     # print("piecelist is ", BOARD.pieceList)
                     # print("checkdict is ", BOARD.checkDict)
                     # print(BOARD.inCheck)
                     # print("kings is ", str(BOARD.kings))
                     # print("line of check is ", BOARD.lineOfCheck)
-                    print("######################################################################")
+                    # print("######################################################################")
                     # if BOARD.turn == "w":
                     #     print("white legal moves is ", str(BOARD.whiteReach))
                     # else:

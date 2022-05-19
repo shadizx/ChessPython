@@ -116,6 +116,9 @@ class Board:
     # maps move number to the piece that was promoted on that move
     promotedPieces = {}
 
+    # save the pawns that promoted
+    promotedPawns = {}
+
     def __init__(self):
         self.pieceList, self.turn, self.castlingsAllowed, self.enpassantSquare, self.movesSinceLastPawn, self.moveNumber, self.kings = fen(self.FEN).LoadFromFEN()
         if self.turn == "w":
@@ -610,10 +613,10 @@ class Board:
         # check if the move made is not the same as the last unmade move
         # this means that we should pop the last unmade move because we are on a different branch
         if len(self.unmadeMoves) > 0:
-            samelastmove = (origin, dest) != self.unmadeMoves.pop()
-            if (samelastmove and self.moveCounter not in self.promotedPieces):
+            differentLastMove = (origin, dest) != self.unmadeMoves.pop()
+            if (differentLastMove and self.moveCounter not in self.promotedPieces):
                 self.unmadeMoves.clear()
-            elif self.moveCounter in self.promotedPieces and not samelastmove:
+            elif self.moveCounter in self.promotedPieces and not differentLastMove:
                 # if movecounter is in self.promotedpieces then this means we have played this promotion before
                 # and we want to auto complete it
                 if forced is not None:
@@ -628,7 +631,7 @@ class Board:
             if promotedPiece == -1:
                 return
             # add to lost pieces for reverting moves
-            self.lostPieces[self.moveCounter] = p
+            self.promotedPawns[self.moveCounter] = p
             p = copy(promotedPiece)
             # add to promotedpieces to track if we go forward
             self.promotedPieces[self.moveCounter] = p
@@ -638,13 +641,15 @@ class Board:
         # move the piece to its destination
         p.setPos(dest)
         # update the position of the piece in pieceList
-        print(self.pieceList[origin])
         self.pieceList[dest] = self.pieceList.pop(origin)  # YES, this also deletes the piece in origin
         # add the move to moveList
         self.moveList.append((origin, dest))
 
         # check if its a rook or king to update that they have been moved and no longer to castle:
         if (p.type in ("k", "r")):
+            # if it's the first time the king/rook moves track that
+            if p.hasMoved == False:
+                p.firstMove = self.moveCounter
             p.hasMoved = True
 
         ##################### CASTLING AND KINGS #######################
@@ -741,14 +746,26 @@ class Board:
                     rook.hasMoved = False
                     p.hasMoved = False
 
+            # check if a king/rook returned to its original position so we'll turn hasMoved to false
+            if p.type in ["k","r"]:
+                # check if the king returned back to its first position
+                if p.firstMove == self.moveCounter:
+                    p.hasMoved = False
+                    p.firstMove = -1
+
             p.setPos(previousOrigin)
             self.pieceList[previousOrigin] = p
 
             # see if there was a piece taken on previous dest
             # bring it back to life
             if (self.moveCounter in self.lostPieces):
-                takenPiece = self.lostPieces.pop(self.moveCounter)
-                self.pieceList[takenPiece.position] = takenPiece
+                lostPiece = self.lostPieces.pop(self.moveCounter)
+                self.pieceList[lostPiece.position] = lostPiece
+            
+            # check if reverting a promotion move, need to bring back the pawn
+            if (self.moveCounter in self.promotedPawns):
+                lostPawn = self.promotedPawns.pop(self.moveCounter)
+                self.pieceList[lostPawn.position] = lostPawn
             
             self.moveCounter -= 1
             # add reverted moves to unmadeMoves:

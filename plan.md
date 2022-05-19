@@ -66,3 +66,5 @@ BUGS:
     add promotion [X] 
     revert and forward move doesn't work
     
+track first time of hasmoved of king
+promotion and taking
