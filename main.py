@@ -119,6 +119,7 @@ def main():
                     # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
                     # print("\n\n######################################################################")
                     # print("movelist is ", str(BOARD.moveList))
+                    print(f'annotations: {BOARD.annotationsList}')
                     # print("unmade moves is ", str(BOARD.unmadeMoves))
                     print("PIECELIST", BOARD.pieceList)
                     # print("######################################################################")
@@ -211,3 +212,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+    

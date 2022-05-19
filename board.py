@@ -14,11 +14,12 @@ fps = 60                                       # setting fps of game
 dimension = width//8                           # dimension of each square
 piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
 DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+fileletters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 ###################################################################
 # sounds for moving pieces
-pygame.mixer.init()
-moveSound = pygame.mixer.Sound("sounds/move.ogg")
-takeSound = pygame.mixer.Sound("sounds/capture.ogg")
+# pygame.mixer.init()
+# moveSound = pygame.mixer.Sound("sounds/move.ogg")
+# takeSound = pygame.mixer.Sound("sounds/capture.ogg")
 # mateSound = pygame.mixer.Sound("sounds/mate.ogg")
 # drawSound = pygame.mixer.Sound("sounds/draw.ogg")
 # loseSound = pygame.mixer.Sound("sounds/defeat.ogg")
@@ -48,7 +49,7 @@ def getmpos():
 class Board:
 
     # start with this FEN
-    FEN = "r3k2r/pppppppp/1q6/8/8/1Q6/PPPPPPPP/R3K2R w KQkq - 0 1"
+    FEN = "1k3r2/4P1P1/4N3/8/8/8/4N1N1/1K6 w - - 0 1"
     # FEN = DEFAULTFEN
 
     # holds boardcolors ( the squares )
@@ -61,6 +62,7 @@ class Board:
     # list of moves that has happened so far:
     # used for going back a move, format is [(12, 20)] - means piece went from square 12 to square 20
     moveList = []
+    annotationsList = []
     # tracks unmade moves to then go forward with arrow key
     unmadeMoves = []
 
@@ -572,6 +574,13 @@ class Board:
     # makeMove
     # useful for moving a piece and updating our directory accordingly
     def makeMove(self, origin, dest, forced = None):
+        # annotation arguments
+        piece_type = '' 
+        take_indicator = False
+        promotion_target = ''
+        castle_overwrite = 0
+
+
         self.moveCounter += 1
         print("on move", self.moveCounter)
 
@@ -580,31 +589,9 @@ class Board:
 
         # grab the piece, move it to the destination
         p = self.pieceList[origin]
-
+        piece_type=p.type
         # get color of piece
         col = 1 if p.color == "w" else -1
-
-        ################# PIECE BEING TAKEN #######################
-        # if there is a piece being taken track that
-        if dest in self.pieceList:
-            self.lostPieces[self.moveCounter] = self.pieceList[dest]
-            pygame.mixer.Sound.play(takeSound)
-            print("TAKEN PIECE ON MOVE", self.moveCounter)
-        else:
-            pygame.mixer.Sound.play(moveSound)
-
-        ###################### ENPASSANT ###########################
-        # delete en passant'ed pawn if needed
-        # need to check if the enpassant is ACTUALLY done
-        if (p.type == "p" and 
-            self.enpassantPawnPos != -1 and
-            (dest - self.enpassantPawnPos) == 8 * col
-            ):
-            # add to lost pieces so we can bring back the piece
-            self.lostPieces[self.moveCounter] = self.pieceList[self.enpassantPawnPos]
-            del self.pieceList[self.enpassantPawnPos]
-            self.enpassantPawnPos = -1
-            print("EN CHOSSANT HAS BEEN TAKEN")
 
         ###################### AUTOCOMPLETE #########################
         # check if the move made is not the same as the last unmade move
@@ -619,6 +606,30 @@ class Board:
                 if forced is not None:
                     autoComplete = self.promotedPieces.pop(self.moveCounter)
                 
+        ################# PIECE BEING TAKEN #######################
+        # if there is a piece being taken track that
+        if dest in self.pieceList:
+            self.lostPieces[self.moveCounter] = self.pieceList[dest]
+            take_indicator = True
+            # pygame.mixer.Sound.play(takeSound)
+            print("TAKEN PIECE ON MOVE", self.moveCounter)
+        # else:
+        #     pygame.mixer.Sound.play(moveSound)
+
+        ###################### ENPASSANT ###########################
+        # delete en passant'ed pawn if needed
+        # need to check if the enpassant is ACTUALLY done
+        if (p.type == "p" and 
+            self.enpassantPawnPos != -1 and
+            (dest - self.enpassantPawnPos) == 8 * col
+            ):
+            # add to lost pieces so we can bring back the piece
+            self.lostPieces[self.moveCounter] = self.pieceList[self.enpassantPawnPos]
+            del self.pieceList[self.enpassantPawnPos]
+            self.enpassantPawnPos = -1
+            take_indicator = True
+            print("EN CHOSSANT HAS BEEN TAKEN")
+
         ###################### PROMOTION ###########################
         # check if piece is promoting:
         # if on the last rank for white or on the first rank for black
@@ -630,6 +641,7 @@ class Board:
             # add to lost pieces for reverting moves
             self.lostPieces[self.moveCounter] = p
             p = copy(promotedPiece)
+            promotion_target = p.type
             # add to promotedpieces to track if we go forward
             self.promotedPieces[self.moveCounter] = p
         
@@ -662,6 +674,7 @@ class Board:
                 self.pieceList[origin + 1] = self.pieceList.pop(origin + 3)
                 # update hasmoved of rook
                 rook.hasMoved = True
+                castle_overwrite = 1
 
             elif dest - origin == -2:
                 # this means that the king wants to long castle
@@ -673,6 +686,7 @@ class Board:
                 self.pieceList[origin - 1] = self.pieceList.pop(origin - 4)
                 # update hasmoved of rook
                 rook.hasMoved = True
+                castle_overwrite = 2
 
         ####################### 50 MOVE RULE ############################
         # check how many moves since last pawn move
@@ -681,7 +695,10 @@ class Board:
         else:
             self.movesSinceLastPawn = 0
 
+        ########################  ANNOTATE   ############################
+        annotation = self.annotateMove(origin, dest, piece_type, take_indicator, promotion_target, castle_overwrite)
         ######################## DIRECTORIES ############################
+
         self.checkDict.clear()
         self.whiteReach.clear()
         self.blackReach.clear()
@@ -693,7 +710,10 @@ class Board:
         self.lineOfCheck.clear()
         # self.isInCheck(self.turn)
         # generate new moves for the same side after they turned, to see if the other side is in check
-        if self.generateMoves(self.turn) in [0,1,2]:
+        if res:=self.generateMoves(self.turn) in [0,1,2]:
+            if res == 1:
+                annotation+=('#')
+                self.annotationsList.append(annotation)
             return
         # switch the move
         self.turn = 'w' if self.turn == 'b' else 'b'
@@ -701,11 +721,17 @@ class Board:
         # clear line of check and see if other side is in check
         self.lineOfCheck.clear()
         self.isInCheck(self.turn)
-        
         self.moveDict.clear()
         # generate moves for other side
-        if self.generateMoves(self.turn) in [0,1,2]:
+        if res:=self.generateMoves(self.turn) in [0,1,2]:
+            if res == 1:
+                annotation+=('#')
+                self.annotationsList.append(annotation)
             return
+        if self.inCheck:
+            annotation+=('+')
+        self.annotationsList.append(annotation)
+        
 
     def revertMove(self):
         if self.moveCounter != 0:
@@ -779,6 +805,57 @@ class Board:
             # generate moves for other side
             if self.generateMoves(self.turn) in [0,1,2]:
                 return
+    # annotate the move
+    # takes place after the table has been updated but before the Reach dictionary has been cleared
+    # does not work for check; the code will add that later manually.
+    def annotateMove(self, origin:int, dest:int, piece_type:str, take_indicator:bool, promotion_target:str, castle_overwrite:int):
+        '''
+        Annotates the move in standard chess notation.
+        Does not work for check; the code will add that later manually.
+        '''
+        # castles are a special case, so handled differently
+        if castle_overwrite == 1: # short castle
+            return "O-O"
+        if castle_overwrite == 2: # long castle
+            return "O-O-O"
+        
+        annotation = ""
+        # indicate origin
+        # pawns are annotated slightly differently, so their case is separated.
+        if piece_type != "p":
+            annotation+=(piece_type.upper())
+            # now check for duplicates in destination
+            reach = self.whiteReach if self.turn == "w" else self.blackReach
+            samefile = samerank = morethanone = False
+            for piece in reach[dest]:
+                if piece.type == piece_type and piece.position != dest:
+                    if piece.position//8 == origin//8:
+                        samefile = True
+                    elif piece.position%8 == origin%8:
+                        samerank = True
+                    morethanone = True
+            if samerank:
+                annotation+=(fileletters[origin%8]) # name the file
+                print("test1")
+            if samefile:
+                annotation+=(str(origin//8+1)) # name the rank
+                print("test2")
+            if (not samerank) and (not samefile) and morethanone:
+                annotation+=(fileletters[origin%8]) # standard
+        else:
+            annotation+=(fileletters[origin%8]) # only name the file for pawns
+        # indicate take
+        if take_indicator:
+            annotation+=('x')
+        # indicate destination of piece
+        if piece_type != 'p' or take_indicator:
+            annotation+=(f"{fileletters[dest%8]}{dest//8+1}")
+        else:
+            annotation+=(str(dest//8+1))
+        # indicate if promotion has happened (only for pawns, obviously!)
+        if promotion_target != '':
+            annotation+=(f"={promotion_target.upper()}")
+        return annotation
 
     # draw
     # draws board squares
@@ -878,3 +955,13 @@ class Square:
 
 # class square
 ###################################################################
+# class Move:
+#     origin, destination = (0, 0)
+#     piece_type = None
+#     taken_piece = None
+#     check_indicator = None
+#     promotion_target = None
+#     castle_rook_tracker = None
+#     hasmoved_change = None
+#     def __repr__(self) -> str:
+#         pass
