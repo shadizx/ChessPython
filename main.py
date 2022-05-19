@@ -135,6 +135,10 @@ def main():
 
                     # print(str(BOARD.pinnedPieces))
                     # print(str(BOARD.whiteLegalMoves.keys()))
+                    print('White Points: ', BOARD.whitePoints)
+                    print('Black Points: ', BOARD.blackPoints)
+                    # print('Total White Points: ', BOARD.totalWhitePoints)
+                    # print('Total Black Points: ', BOARD.totalBlackPoints)
                     # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
 
                     # check if previously clicked on a piece to move the piece there

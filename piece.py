@@ -34,9 +34,10 @@ class Piece:
 # creating specific pieces that inherit from piece class
 # class pawn(piece) ---------------------------------------
 class pawn(Piece):
-    def __init__(self, color, position = 0):
+    def __init__(self, color, position = 0,):
         super().__init__(color, position = position, type="p")  # have to keep it like this for the defaults to work!
         self.type = "p"
+        self.value = 1
 # class pawn(piece) ----------------------------------------
 
 # class bishop(piece) --------------------------------------
@@ -44,6 +45,7 @@ class bishop(Piece):
     def __init__(self, color, position = 0):
         super().__init__(color, position = position, type="b")
         self.type = "b"
+        self.value = 3
 # class bishop(piece) --------------------------------------
 
 # class knight(piece) --------------------------------------
@@ -51,6 +53,7 @@ class knight(Piece):
     def __init__(self, color, position = 0):
         super().__init__(color, position = position, type="n")
         self.type = "n"
+        self.value = 3
 # class knight(piece) --------------------------------------
 
 # class rook(piece) ----------------------------------------
@@ -58,6 +61,7 @@ class rook(Piece):
     def __init__(self, color, position = 0):
         super().__init__(color, position = position, type="r")
         self.type = "r"
+        self.value = 5
         self.hasMoved = False
         self.firstMove = -1
 # class rook(piece) -----------------------------------------
@@ -67,6 +71,7 @@ class queen(Piece):
     def __init__(self, color, position = 0):
         super().__init__(color, position = position, type="q")
         self.type = "q"
+        self.value = 9
 # class queen(piece) -----------------------------------------
 
 # class king(piece) ------------------------------------------
@@ -74,6 +79,7 @@ class king(Piece):
     def __init__(self, color, position = 0):
         super().__init__(color, position = position, type="k")
         self.type = "k"
+        self.value = 0
         self.hasMoved = False
         self.firstMove = -1
 # class king(piece) -------------------------------------------

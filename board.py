@@ -112,6 +112,15 @@ class Board:
     whiteLegalMoves = set()
     blackLegalMoves = set()
 
+    # two integers, each for the total white and black points 
+    totalWhitePoints = 0
+    totalBlackPoints = 0
+
+    # whitePoints = totalWhitePoints - totalBlackPoints ----> How many points white is up
+    # blackPoints = totalBlackPoints - totalWhitePoints ----> How many points black is up
+    whitePoints = 0
+    blackPoints = 0
+
     # see if board is in promotion state
     promotionState = False
 
@@ -147,6 +156,13 @@ class Board:
                         print("double check")
                         self.loadkmoves(self.pieceList[self.kings[turn]])
                         break
+                # add the Black pieces' points to the totalBlackPoints
+                if turn == 'b':
+                    self.totalBlackPoints += piece.value
+                # add the White pieces' points to the totalWhitePoints
+                else: 
+                    self.totalWhitePoints += piece.value
+
                 if piece.type == 'p':
                     self.loadpmoves(piece)
                 elif piece.type == "n":
@@ -158,7 +174,19 @@ class Board:
                     self.loadSlidingMoves(piece, 1)
                 elif piece.type == "k":
                     self.loadkmoves(piece)
-
+        
+        # Determining how many points the white is up from the black
+        if self.totalWhitePoints > self.totalBlackPoints:
+            self.whitePoints = self.totalWhitePoints - self.totalBlackPoints
+            self.blackPoints = 0
+        # Determining how many points the black is up from the white
+        elif self.totalWhitePoints < self.totalBlackPoints:
+            self.blackPoints = self.totalBlackPoints - self.totalWhitePoints
+            self.whitePoints = 0
+        # making both blackPoints and whitePoints if they have the same points in total
+        else:
+            self.blackPoints, self.whitePoints = 0, 0
+    
         # now see if a side is in checkmate
         # this happens when you're in check and have no legal moves to make
         if (turn == "w" and len(self.whiteLegalMoves) == 0) or (turn == "b" and len(self.blackLegalMoves) == 0):
@@ -697,6 +725,10 @@ class Board:
         self.moveDict.clear()
         self.whiteLegalMoves.clear()
         self.blackLegalMoves.clear()
+        # setting both the totalWhitePoints and the totalBlackPoints to zero so that they don't double every time we make a move.
+        self.totalWhitePoints = 0
+        self.totalBlackPoints = 0
+
         self.lineOfCheck.clear()
         # self.isInCheck(self.turn)
         # generate new moves for the same side after they turned, to see if the other side is in check
