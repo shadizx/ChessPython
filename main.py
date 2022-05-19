@@ -118,15 +118,16 @@ def main():
                 if event.button == 1: # if left-clicked
                     # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
                     # print("\n\n######################################################################")
-                    print("movelist is ", str(BOARD.moveList))
-                    print("unmade moves is ", str(BOARD.unmadeMoves))
-                    # print("turn is for ", BOARD.turn)
+                    # print("movelist is ", str(BOARD.moveList))
+                    # print("unmade moves is ", str(BOARD.unmadeMoves))
+                    print("PIECELIST", BOARD.pieceList)
                     # print("######################################################################")
+                    # print("piecelist is ", BOARD.pieceList)
                     # print("checkdict is ", BOARD.checkDict)
                     # print(BOARD.inCheck)
-                    # print("######################################################################")
                     # print("kings is ", str(BOARD.kings))
                     # print("line of check is ", BOARD.lineOfCheck)
+                    print("######################################################################")
                     # if BOARD.turn == "w":
                     #     print("white legal moves is ", str(BOARD.whiteReach))
                     # else:
@@ -196,15 +197,13 @@ def main():
                 if event.key == pygame.K_LEFT:
                     BOARD.revertMove()
                     legalCircles.clear()
+                    PIECECLICKED = False
                     refresh()
-                    print(BOARD.unmadeMoves)
                 elif event.key == pygame.K_RIGHT:
                     if (len(BOARD.unmadeMoves) > 0):
-                            BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1])
-                            # BOARD.unmadeMoves.pop()
+                            BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1], True)
                             legalCircles.clear()
                             refresh()
-                            # print(BOARD.unmadeMoves)
 
 #################################while loop####################################################
         
