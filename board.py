@@ -49,7 +49,7 @@ def getmpos():
 class Board:
 
     # start with this FEN
-    FEN = "1k3r2/4P1P1/4N3/8/8/8/4N1N1/1K6 w - - 0 1"
+    FEN = DEFAULTFEN
     # FEN = DEFAULTFEN
 
     # holds boardcolors ( the squares )
@@ -737,6 +737,7 @@ class Board:
         if self.moveCounter != 0:
             # grab origin and dest of last move played
             previousOrigin, previousDest = (self.moveList.pop(-1))  # removes and returns the last element
+            self.annotationsList.pop()
             # grab the piece
             p = self.pieceList.pop(previousDest)
             pos = p.position
@@ -829,17 +830,15 @@ class Board:
             samefile = samerank = morethanone = False
             for piece in reach[dest]:
                 if piece.type == piece_type and piece.position != dest:
-                    if piece.position//8 == origin//8:
+                    if piece.position%8 == origin%8:
                         samefile = True
-                    elif piece.position%8 == origin%8:
+                    elif piece.position//8 == origin//8:
                         samerank = True
                     morethanone = True
             if samerank:
                 annotation+=(fileletters[origin%8]) # name the file
-                print("test1")
             if samefile:
                 annotation+=(str(origin//8+1)) # name the rank
-                print("test2")
             if (not samerank) and (not samefile) and morethanone:
                 annotation+=(fileletters[origin%8]) # standard
         else:
