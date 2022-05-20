@@ -169,6 +169,7 @@ def main():
                     # # # # # # # # # # # # # # # # # # # FOR TESTING PURPOSES: # # # # # # # # # # # # # # # # # # #
                     # print("\n\n######################################################################")
                     # print("movelist is ", str(BOARD.moveList))
+                    print(f'annotations: {BOARD.annotationsList}')
                     # print("unmade moves is ", str(BOARD.unmadeMoves))
                     # print("PIECELIST", BOARD.pieceList)
                     # print("######################################################################")
@@ -233,18 +234,6 @@ def main():
                         animateMove(p,pos)
                         refresh()
             elif pygame.mouse.get_pressed()[0] & PIECECLICKED: # while holding the piece
-                if event.type == pygame.USEREVENT:
-                    # for timer
-                    if BOARD.turn == "w":
-                        wTimer.tick()
-                        pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 444, 219, 70))
-                        WIN.blit(wTimer.font.render(wTimer.TimerText, True, (255, 255, 255)), (680, 445))
-                    else:
-                        bTimer.tick()
-                        pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 125, 219, 70))
-                        WIN.blit(bTimer.font.render(bTimer.TimerText, True, (255, 255, 255)), (680, 125))
-                    pygame.display.flip()
-
                 # make the piece dissapear from it's previous place:
                 piecedisappear(p)
                 # get mouse position
@@ -273,7 +262,7 @@ def main():
                             BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1], True)
                             legalCircles.clear()
                             refresh()
-            elif event.type == pygame.USEREVENT:
+            if event.type == pygame.USEREVENT:
                 # for timer
                 if BOARD.turn == "w":
                     wTimer.tick()
