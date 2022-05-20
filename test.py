@@ -24,5 +24,5 @@ while run:
 
     screen.fill((255, 255, 255))
     screen.blit(font.render(text, True, (0, 0, 0)), (32, 48))
-    pygame.display.flip()
+    pygame.boom.flip()
     clock.tick(60)

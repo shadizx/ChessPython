@@ -1,4 +1,4 @@
-# game.py
+# main.py
 # responsible for running the main program
 import pygame
 import piece
@@ -19,13 +19,45 @@ TIMERSQAURE = (37,36,32)
 circler = 20
 # available legal moves
 legalCircles = []
-# times for games
-BULLET = board.BULLET
-BLITZ = board.BLITZ
-RAPID = board.RAPID
-CLASSICAL = board.CLASSICAL
 ##################################################################
+# class clock, responsible for each sides clock
+class Clock:
+    # game modes
+    BULLET = board.BULLET
+    BLITZ = board.BLITZ
+    RAPID = board.RAPID
+    CLASSICAL = board.CLASSICAL
+    Timer = 0
+    TimerText = ""
 
+    def __init__(self, timeSeconds):
+        # initiate timer
+        self.Timer = timeSeconds
+        # initiate timer with text format
+        self.TimerText = self.secondsConvert(timeSeconds)
+        self.font = pygame.font.SysFont('Consolas', 80)
+        pygame.time.set_timer(pygame.USEREVENT, 1000)
+
+    def secondsConvert(self, seconds):
+        secondsHolder = minuteHolder = ""
+        minute, seconds = seconds // 60, seconds % 60
+        if minute < 10:
+            minuteHolder = "0"
+        if seconds < 10:
+            secondsHolder = "0"
+        out = f"{minuteHolder}{minute}:{secondsHolder}{seconds}".rjust(3)
+        return out
+    
+    def tick(self):
+        if self.Timer > 0:
+            self.Timer -= 1
+            self.TimerText = self.secondsConvert(self.Timer)
+            
+###################################################################
+# times for games
+timeFormat = 63
+wTimer = Clock(timeFormat)
+bTimer = Clock(timeFormat)
 ###################################################################
 # drawcircles
 # draws circles for legal moves of a piece
@@ -93,7 +125,7 @@ def piecedisappear(p):
 ###################################################################
 # animateMove()
 # does the animation for making a move
-def animateMove(p, pos, PIECECLICKED):
+def animateMove(p, pos, PIECECLICKED = None):
     if p in BOARD.moveDict and p.color == BOARD.turn:
             for move in BOARD.moveDict[p]:
                 if (move == pos): # if a legal move position is the same as pos
@@ -103,27 +135,32 @@ def animateMove(p, pos, PIECECLICKED):
                     legalCircles.clear()
                     PIECECLICKED = False
 ###################################################################
+# drawui()
+# draws the ui
+def drawUI():
+    WIN.fill(BACKGROUNDCOLOR)
+    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 195, 480, 250))
+    
+    # black timer square
+    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 125, 219, 70))
+    WIN.blit(bTimer.font.render(bTimer.TimerText, True, (255, 255, 255)), (680, 125))
+    # white timer square
+    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 444, 219, 70))
+    WIN.blit(wTimer.font.render(wTimer.TimerText, True, (255, 255, 255)), (680, 445)) 
+###################################################################
 # main driver
 def main():
     # running main window
     clock = pygame.time.Clock()
     run = True
 
-    TIMER, timerText = BLITZ, '3:00'.rjust(3)
-    pygame.time.set_timer(pygame.USEREVENT, 1000)
-    font = pygame.font.SysFont('Calibri', 80)
-
-    WIN.fill(BACKGROUNDCOLOR)
+    drawUI()
     refresh()
 
     PIECECLICKED = False
 ################################# while loop ####################################################
     while run:
         clock.tick(FPS)
-        pygame.draw.rect(WIN, (255,255,255), pygame.Rect(800, 320, 180, 90))
-        WIN.blit(font.render(timerText, True, (0, 0, 0)), (800, 320))
-        pygame.display.flip()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # if program is executed
                 run = False
@@ -175,8 +212,9 @@ def main():
                             # clear the old static piece
                             piecedisappear(p)
                             # get mouse position
-                            xloc = event.pos[0]
-                            yloc = event.pos[1]
+                            mousepos = pygame.mouse.get_pos()
+                            xloc = mousepos[0]
+                            yloc = mousepos[1]
                             # need to check if mouse is going out of the window, then let go of piece
                             piece2mouse(xloc, yloc, p)
                     if (pos not in BOARD.pieceList) or (BOARD.pieceList[pos].color != BOARD.turn):
@@ -198,13 +236,15 @@ def main():
                 # make the piece dissapear from it's previous place:
                 piecedisappear(p)
                 # get mouse position
-                xloc = event.pos[0]
-                yloc = event.pos[1]
+                mousepos = pygame.mouse.get_pos()
+                xloc = mousepos[0]
+                yloc = mousepos[1]
                 # need to check if mouse is going out of the window, then let go of piece
-                if  xloc >= WIDTH - 1  or \
+                if  xloc >= HEIGHT - 1  or \
                     yloc >= HEIGHT - 1 or \
                     xloc <= 1 or yloc <= 1:
                         legalCircles.clear()
+                        drawUI()
                         refresh()
                         break
                 else:
@@ -223,19 +263,15 @@ def main():
                             refresh()
             elif event.type == pygame.USEREVENT:
                 # for timer
-                TIMER -= 1
-                secondsHolder = ""
-                minuteHolder = ""
-                minute = TIMER // 60
-                seconds = TIMER % 60
-                if minute < 10:
-                    minuteHolder = "0"
-                if minute < 1:
-                    minuteHoler += "0"
-                if seconds < 10:
-                    secondsHolder = "0"
-                timerOutput = f"{minuteHolder}{minute}:{secondsHolder}{seconds}"
-                timerText = str(timerOutput).rjust(3)
+                if BOARD.turn == "w":
+                    wTimer.tick()
+                    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 444, 219, 70))
+                    WIN.blit(wTimer.font.render(wTimer.TimerText, True, (255, 255, 255)), (680, 445))
+                else:
+                    bTimer.tick()
+                    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 125, 219, 70))
+                    WIN.blit(bTimer.font.render(bTimer.TimerText, True, (255, 255, 255)), (680, 125))
+                pygame.display.flip()
         
 
 #################################while loop####################################################
