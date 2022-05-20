@@ -3,27 +3,31 @@
 import pygame
 import piece
 import board
+pygame.init()
 
 ###################### constants ############################
-width, height = 1200, 640                           # constant width and height, set for basic testing
-win = pygame.display.set_mode((width, height)) # setting window width and height
+WIDTH, HEIGHT = 1200, 640                           # constant width and height, set for basic testing
+WIN = pygame.display.set_mode((WIDTH, HEIGHT)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
-fps = 120                                      # setting fps of game
-dimension = height//8                           # dimension of each square
-piece_size = int(dimension * 0.9)              # adjust the size of pieces on the board
+FPS = 120                                      # setting fps of game
+DIMENSION = HEIGHT//8                           # dimension of each square
+piece_size = int(DIMENSION * 0.9)              # adjust the size of pieces on the board
 BOARD = board.Board()
-DIRECTORY = BOARD.pieceList
-piecedrag = False
+BACKGROUNDCOLOR = (22,21,17)
+TIMERSQAURE = (37,36,32)
 # circle dimensions for showing legal moves
-circlex = 40
-circley = -40
 circler = 20
 # available legal moves
 legalCircles = []
+# times for games
+BULLET = board.BULLET
+BLITZ = board.BLITZ
+RAPID = board.RAPID
+CLASSICAL = board.CLASSICAL
 ##################################################################
 
 ###################################################################
-# drawcircleS
+# drawcircles
 # draws circles for legal moves of a piece
 def drawCircles(surface, color, center, radius):
     place = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
@@ -35,8 +39,8 @@ def drawCircles(surface, color, center, radius):
 # useful for drawing the board
 def drawboard():
     BOARD.draw()
-    for m in legalCircles:
-        win.blit(m[0], m[1])
+    for circle in legalCircles:
+        WIN.blit(circle[0], circle[1])
 ###################################################################
 # drawpieces()
 # useful for drawing the pieces
@@ -48,12 +52,11 @@ def drawpieces():
 # getting the position of the mouse upon clicking
 def getmpos():
     pos = pygame.mouse.get_pos()
-    x = pos[0] // 80
-    y = 7 - pos[1] // 80
+    x = pos[0] // DIMENSION
+    y = 7 - pos[1] // DIMENSION
     return (x,y)
 ###################################################################
 # printmoves
-# returns the location of the piece clicked, null if no piece has been clicked
 def printmoves(p):
     #refresh legalCircles:
     legalCircles.clear()
@@ -62,7 +65,7 @@ def printmoves(p):
         for move in BOARD.moveDict[p]:
             #load the legal moves on the board
             y, x = piece.getRankFile(move)
-            circleimg = drawCircles(win, (0, 0, 0, 127), (dimension * x + (dimension/2), height - dimension * y - (dimension/2)), circler)
+            circleimg = drawCircles(WIN, (0, 0, 0, 127), (DIMENSION * x + (DIMENSION/2), HEIGHT - DIMENSION * y - (DIMENSION/2)), circler)
             legalCircles.append(circleimg)
 ###################################################################
 # piece2mouse
@@ -70,7 +73,7 @@ def printmoves(p):
 def piece2mouse(mousex, mousey, p):
     xloc = mousex - piece.piece_size//2 - 3
     yloc = mousey - piece.piece_size//2 - 3
-    win.blit(p.img, (xloc, yloc))
+    WIN.blit(p.img, (xloc, yloc))
     pygame.display.flip()
 ###################################################################
 # refresh()
@@ -90,7 +93,7 @@ def piecedisappear(p):
 ###################################################################
 # animateMove()
 # does the animation for making a move
-def animateMove(p, pos):
+def animateMove(p, pos, PIECECLICKED):
     if p in BOARD.moveDict and p.color == BOARD.turn:
             for move in BOARD.moveDict[p]:
                 if (move == pos): # if a legal move position is the same as pos
@@ -106,11 +109,21 @@ def main():
     clock = pygame.time.Clock()
     run = True
 
+    TIMER, timerText = BLITZ, '3:00'.rjust(3)
+    pygame.time.set_timer(pygame.USEREVENT, 1000)
+    font = pygame.font.SysFont('Calibri', 80)
+
+    WIN.fill(BACKGROUNDCOLOR)
     refresh()
+
     PIECECLICKED = False
 ################################# while loop ####################################################
     while run:
-        clock.tick(fps)
+        clock.tick(FPS)
+        pygame.draw.rect(WIN, (255,255,255), pygame.Rect(800, 320, 180, 90))
+        WIN.blit(font.render(timerText, True, (0, 0, 0)), (800, 320))
+        pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # if program is executed
                 run = False
@@ -149,7 +162,7 @@ def main():
                     pos = 8 * ypos + xpos
                     
                     if PIECECLICKED:
-                        animateMove(p, pos)
+                        animateMove(p, pos, PIECECLICKED)
                         
                     # check if there is a piece where the mouse has been clicked
                     if (pos in BOARD.pieceList):
@@ -188,8 +201,8 @@ def main():
                 xloc = event.pos[0]
                 yloc = event.pos[1]
                 # need to check if mouse is going out of the window, then let go of piece
-                if  xloc >= width - 1  or \
-                    yloc >= height - 1 or \
+                if  xloc >= WIDTH - 1  or \
+                    yloc >= HEIGHT - 1 or \
                     xloc <= 1 or yloc <= 1:
                         legalCircles.clear()
                         refresh()
@@ -208,6 +221,22 @@ def main():
                             BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1], True)
                             legalCircles.clear()
                             refresh()
+            elif event.type == pygame.USEREVENT:
+                # for timer
+                TIMER -= 1
+                secondsHolder = ""
+                minuteHolder = ""
+                minute = TIMER // 60
+                seconds = TIMER % 60
+                if minute < 10:
+                    minuteHolder = "0"
+                if minute < 1:
+                    minuteHoler += "0"
+                if seconds < 10:
+                    secondsHolder = "0"
+                timerOutput = f"{minuteHolder}{minute}:{secondsHolder}{seconds}"
+                timerText = str(timerOutput).rjust(3)
+        
 
 #################################while loop####################################################
         

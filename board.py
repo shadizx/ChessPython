@@ -13,6 +13,11 @@ pygame.display.set_caption("SelfChessAI")      # setting name of window
 FPS = 60                                       # setting fps of game
 DIMENSION = HEIGHT//8                           # dimension of each square
 DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#TIMES FOR GAMES
+BLITZ = 180
+BULLET = 60
+RAPID = 600
+CLASSICAL = 1800 
 ###################################################################
 # sounds for moving pieces
 pygame.mixer.init()
