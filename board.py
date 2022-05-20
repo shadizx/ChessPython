@@ -1,6 +1,5 @@
 # board.py
 # responsible for boad structure and operations
-from hashlib import new
 import pygame
 from copy import copy
 import piece
@@ -46,9 +45,6 @@ def getmpos():
 # class Board
 # inherits from fen, responsible for board square colors
 class Board:
-
-    boardWidth, boardHeight = WIDTH, HEIGHT
-
     # start with this FEN
     FEN = "r3k2r/pppppppp/1q6/8/8/1Q6/PPPPPPPP/R3K2R w KQkq - 0 1"
     # FEN = DEFAULTFEN
@@ -836,19 +832,15 @@ class Board:
     def draw(self):
         # first time draw is called, load the square
         # next time, just draw the squares
-        print("board height is ", self.boardHeight)
         if len(self.boardColors) == 0:
             for position in range(64):
                 isWhite = sum(piece.getRankFile(position)) % 2 != 0
-                temp = Square(position, isWhite, self.boardHeight)
+                temp = Square(position, isWhite)
                 temp.draw()
                 self.boardColors.append(temp)
         else:
             for square in self.boardColors:
-                square.draw(self.boardHeight)
-
-    def resize(self, height):
-        self.boardHeight = height
+                square.draw()
 #class board
 ###################################################################
 # class fen
@@ -921,19 +913,15 @@ class Square:
     # default constructor
     WHITE=(248,220,180)
     BLACK=(184,140,100)
-    boardHeight = HEIGHT
 
-    def __init__(self, position, color, height = HEIGHT):
+    def __init__(self, position, color):
         self.position = position
         self.isWhite = color
         self.color = self.WHITE if self.isWhite else self.BLACK
-        self.boardHeight = height
-        print(self.boardHeight)
-        print("##")
 
-    def draw(self, newHeight = boardHeight):
+    def draw(self):
         y, x = divmod(self.position, 8)
-        pygame.draw.rect(win, self.color, pygame.Rect(x * DIMENSION, newHeight - (y+1) * DIMENSION, DIMENSION, DIMENSION))
+        pygame.draw.rect(win, self.color, pygame.Rect(x * DIMENSION, HEIGHT - (y+1) * DIMENSION, DIMENSION, DIMENSION))
 
 # class square
 ###################################################################

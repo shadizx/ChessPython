@@ -5,8 +5,8 @@ import piece
 import board
 
 ###################### constants ############################
-width, height = 1000, 640                           # constant width and height, set for basic testing
-win = pygame.display.set_mode((width, height), pygame.RESIZABLE) # setting window width and height
+width, height = 1200, 640                           # constant width and height, set for basic testing
+win = pygame.display.set_mode((width, height)) # setting window width and height
 pygame.display.set_caption("SelfChessAI")      # setting name of window
 fps = 120                                      # setting fps of game
 dimension = height//8                           # dimension of each square
@@ -208,12 +208,6 @@ def main():
                             BOARD.makeMove(BOARD.unmadeMoves[-1][0], BOARD.unmadeMoves[-1][1], True)
                             legalCircles.clear()
                             refresh()
-            # if window is resized, resize everything else
-            elif event.type == pygame.VIDEORESIZE:
-                win = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-                BOARD.boardWidth, BOARD.boardHeight = event.w, event.h
-                print(BOARD.boardHeight)
-                refresh()
 
 #################################while loop####################################################
         
