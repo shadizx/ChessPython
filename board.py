@@ -25,7 +25,7 @@ class Mixer:
     def __init__(self, mute = False):
         if not mute:
             pygame.mixer.init()
-            sounds = {
+            self.sounds = {
             'wMove' : pygame.mixer.Sound("sounds/move_white.mp3"),
             'bMove' : pygame.mixer.Sound("sounds/move_black.mp3"),
             'take' : pygame.mixer.Sound("sounds/take.mp3"),
@@ -42,7 +42,7 @@ class Mixer:
     def play(self, sound):
         if not self.mute:
             pygame.mixer.Sound.play(self.sounds[sound])
-mixer = Mixer(mute = True)
+mixer = Mixer(mute = False)
 ###################################################################
 
 ################################BOARD ANIMATIONS###################################
@@ -163,7 +163,7 @@ class Board:
         # check if there are only two kings remaining so it would be a draw
         if len(self.pieceList) == 2 and self.kings["w"] in self.pieceList and self.kings["b"] in self.pieceList:
             print("Draw")
-            return 0
+            return 1
         
         # clear the moveDict
         for piece in self.pieceList.values():
@@ -214,6 +214,7 @@ class Board:
             else:
                 print("Stalemate!")
                 return 1
+        return 0
 
     # addmove
     # adds a legal move to the appropriate dictionaries
@@ -625,7 +626,7 @@ class Board:
     def makeMove(self, origin, dest, forced = None):
         # annotation arguments
         piece_type = '' 
-        take_indicator = False
+        mate_indicator = draw_indicator = check_indicator = take_indicator = False
         promotion_target = ''
         castle_overwrite = 0
 
@@ -660,10 +661,7 @@ class Board:
         if dest in self.pieceList:
             self.lostPieces[self.moveCounter] = self.pieceList[dest]
             take_indicator = True
-            mixer.play("take")
             print("TAKEN PIECE ON MOVE", self.moveCounter)
-        else:
-            mixer.play(f'{p.color}Move')
 
         ###################### ENPASSANT ###########################
         # delete en passant'ed pawn if needed
@@ -765,11 +763,9 @@ class Board:
         self.lineOfCheck.clear()
         # self.isInCheck(self.turn)
         # generate new moves for the same side after they turned, to see if the other side is in check
-        if res:=self.generateMoves(self.turn) in [0,1,2]:
-            if res == 1:
-                annotation+=('#')
-                self.annotationsList.append(annotation)
-            return
+        res = self.generateMoves(self.turn)
+        if res == 1:
+            draw_indicator = True
         # switch the move
         self.turn = 'w' if self.turn == 'b' else 'b'
 
@@ -778,13 +774,33 @@ class Board:
         self.isInCheck(self.turn)
         self.moveDict.clear()
         # generate moves for other side
-        if res:=self.generateMoves(self.turn) in [0,1,2]:
-            if res == 1:
-                annotation+=('#')
-                self.annotationsList.append(annotation)
-            return
-        if self.inCheck:
+        res = self.generateMoves(self.turn)
+        if res == 2:
+            annotation+=('#')
+            self.annotationsList.append(annotation)
+            mate_indicator = True
+        elif res == 1:
+            draw_indicator = True
+
+        if self.inCheck and not mate_indicator:
             annotation+=('+')
+            check_indicator = True
+
+        ######################## SOUNDS ############################
+        if mate_indicator:
+            mixer.play("checkmate")
+        elif check_indicator:
+            mixer.play("check")
+        elif draw_indicator:
+            mixer.play("stalemate")
+        elif take_indicator:
+            mixer.play("take")
+        elif castle_overwrite == 1:
+            mixer.play("shortCastle")
+        elif castle_overwrite == 2:
+            mixer.play("longCastle")
+        else:
+            mixer.play(f'{p.color}Move')
         self.annotationsList.append(annotation)
         
 
@@ -860,8 +876,7 @@ class Board:
             self.lineOfCheck.clear()
             # self.isInCheck(self.turn)
             # generate new moves for the same side after they turned, to see if the other side is in check
-            if self.generateMoves(self.turn) in [0,1,2]:
-                return
+            self.generateMoves(self.turn)
             # switch the move
             self.turn = 'w' if self.turn == 'b' else 'b'
 
@@ -870,9 +885,8 @@ class Board:
             self.isInCheck(self.turn)
             
             self.moveDict.clear()
-            # generate moves for other side
-            if self.generateMoves(self.turn) in [0,1,2]:
-                return
+            self.generateMoves(self.turn)
+
     # annotate the move
     # takes place after the table has been updated but before the Reach dictionary has been cleared
     # does not work for check; the code will add that later manually.

@@ -155,6 +155,7 @@ def main():
     run = True
 
     drawUI()
+    board.mixer.play('gameStart')
     refresh()
 
     PIECECLICKED = False
