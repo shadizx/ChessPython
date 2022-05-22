@@ -761,7 +761,7 @@ class Board:
         self.totalBlackPoints = 0
 
         self.lineOfCheck.clear()
-        # self.isInCheck(self.turn)
+        self.isInCheck(self.turn)
         # generate new moves for the same side after they turned, to see if the other side is in check
         res = self.generateMoves(self.turn)
         if res == 1:
