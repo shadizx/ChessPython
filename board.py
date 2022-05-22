@@ -20,14 +20,29 @@ RAPID = 600
 CLASSICAL = 1800 
 fileletters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 ###################################################################
-# sounds for moving pieces
-# pygame.mixer.init()
-# moveSound = pygame.mixer.Sound("sounds/move.ogg")
-# takeSound = pygame.mixer.Sound("sounds/capture.ogg")
-# mateSound = pygame.mixer.Sound("sounds/mate.ogg")
-# drawSound = pygame.mixer.Sound("sounds/draw.ogg")
-# loseSound = pygame.mixer.Sound("sounds/defeat.ogg")
-# startSound = pygame.mixer.Sound("sounds/welcome.ogg")
+class Mixer:
+
+    def __init__(self, mute = False):
+        if not mute:
+            pygame.mixer.init()
+            sounds = {
+            'wMove' : pygame.mixer.Sound("sounds/move_white.mp3"),
+            'bMove' : pygame.mixer.Sound("sounds/move_black.mp3"),
+            'take' : pygame.mixer.Sound("sounds/take.mp3"),
+            'check' : pygame.mixer.Sound("sounds/check_white.mp3"),
+            'checkmate' : pygame.mixer.Sound("sounds/checkmate.mp3"),
+            'gameStart' : pygame.mixer.Sound("sounds/game_start.mp3"),
+            'gameOver' : pygame.mixer.Sound("sounds/game_over.mp3"),
+            'shortCastle' : pygame.mixer.Sound("sounds/short_castle.mp3"),
+            'longCastle' : pygame.mixer.Sound("sounds/long_castle.mp3"),
+            'stalemate' : pygame.mixer.Sound("sounds/stalemate.mp3"),
+            }
+        self.mute = mute
+
+    def play(self, sound):
+        if not self.mute:
+            pygame.mixer.Sound.play(self.sounds[sound])
+mixer = Mixer(mute = True)
 ###################################################################
 
 ################################BOARD ANIMATIONS###################################
@@ -645,10 +660,10 @@ class Board:
         if dest in self.pieceList:
             self.lostPieces[self.moveCounter] = self.pieceList[dest]
             take_indicator = True
-            # pygame.mixer.Sound.play(takeSound)
+            mixer.play("take")
             print("TAKEN PIECE ON MOVE", self.moveCounter)
-        # else:
-        #     pygame.mixer.Sound.play(moveSound)
+        else:
+            mixer.play(f'{p.color}Move')
 
         ###################### ENPASSANT ###########################
         # delete en passant'ed pawn if needed
@@ -1016,3 +1031,4 @@ class Square:
 #     hasmoved_change = None
 #     def __repr__(self) -> str:
 #         pass
+
