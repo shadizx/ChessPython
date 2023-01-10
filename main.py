@@ -142,10 +142,10 @@ def drawUI():
     pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 195, 480, 250))
     
     # black timer square
-    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 125, 219, 70))
+    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 125, 240, 70))
     WIN.blit(bTimer.font.render(bTimer.TimerText, True, (255, 255, 255)), (680, 125))
     # white timer square
-    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 444, 219, 70))
+    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 444, 240, 70))
     WIN.blit(wTimer.font.render(wTimer.TimerText, True, (255, 255, 255)), (680, 445)) 
 ###################################################################
 # main driver
@@ -155,7 +155,6 @@ def main():
     run = True
 
     drawUI()
-    board.mixer.play('gameStart')
     refresh()
 
     PIECECLICKED = False
@@ -267,11 +266,11 @@ def main():
                 # for timer
                 if BOARD.turn == "w":
                     wTimer.tick()
-                    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 444, 219, 70))
+                    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 444, 240, 70))
                     WIN.blit(wTimer.font.render(wTimer.TimerText, True, (255, 255, 255)), (680, 445))
                 else:
                     bTimer.tick()
-                    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 125, 219, 70))
+                    pygame.draw.rect(WIN, TIMERSQAURE, pygame.Rect(680, 125, 240, 70))
                     WIN.blit(bTimer.font.render(bTimer.TimerText, True, (255, 255, 255)), (680, 125))
                 pygame.display.flip()
         
